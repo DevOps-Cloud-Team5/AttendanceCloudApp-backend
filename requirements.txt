@@ -1,0 +1,11 @@
+asgiref==3.7.2
+beautifulsoup4==4.12.3
+Django==5.0.2
+django-cors-headers==4.3.1
+django-livereload==1.7
+djangorestframework==3.14.0
+python-decouple==3.8
+pytz==2024.1
+soupsieve==2.5
+sqlparse==0.4.4
+typing_extensions==4.9.0
