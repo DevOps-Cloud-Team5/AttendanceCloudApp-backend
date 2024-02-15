@@ -1,2 +1,2 @@
 # AttendanceCloudApp
-Migrate a classical application to the cloud 
+Migrate a backend of classical application to the cloud 
