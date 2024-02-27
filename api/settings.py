@@ -58,7 +58,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 STATIC_URL = '/static/'
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = 'api.urls'
 
 ALLOWED_HOSTS = ['*']
 
@@ -75,7 +75,7 @@ INSTALLED_APPS = [
 	'rest_framework',
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = 'api.wsgi.application'
 
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 
