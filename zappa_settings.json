@@ -1,0 +1,9 @@
+{
+    "prod": {
+        "aws_region": "eu-central-1",
+        "django_settings": "config.settings",
+        "project_name": "config",
+        "runtime": "python3.10",
+        "s3_bucket": "zappa-attendunce"
+    }
+}
