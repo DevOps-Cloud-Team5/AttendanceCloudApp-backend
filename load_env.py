@@ -10,8 +10,8 @@ def update_zappa_settings():
         "DB_PORT": config('DB_PORT'),
         "DB_PASSWORD": config('DB_PASSWORD'),
         "AWS_STORAGE_BUCKET_NAME": config('AWS_STORAGE_BUCKET_NAME'),
-        "API_KEY": config('API_KEY'),
-        "API_SECRET": config('API_SECRET'),
+        "AWS_ACCESS_KEY_ID": config('AWS_ACCESS_KEY_ID'),
+        "AWS_SECRET_ACCESS_KEY": config('AWS_SECRET_ACCESS_KEY'),
     }
 
     # Load existing Zappa settings
