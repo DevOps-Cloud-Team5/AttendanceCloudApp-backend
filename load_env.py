@@ -9,7 +9,7 @@ def update_zappa_settings():
         "DB_USER": config('DB_USER'),
         "DB_PORT": config('DB_PORT'),
         "DB_PASSWORD": config('DB_PASSWORD'),
-        "CLOUD_NAME": config('CLOUD_NAME'),
+        "AWS_STORAGE_BUCKET_NAME": config('AWS_STORAGE_BUCKET_NAME'),
         "API_KEY": config('API_KEY'),
         "API_SECRET": config('API_SECRET'),
     }
