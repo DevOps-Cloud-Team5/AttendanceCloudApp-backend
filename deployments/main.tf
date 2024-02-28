@@ -150,6 +150,18 @@ resource "aws_iam_policy" "cloudwatch_logs" {
 EOF
 }
 
+resource "aws_route53_zone" "primary" {
+  name = "attendunce.click"
+}
+
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.primary.zone_id
+  name    = "attendunce.click"
+  type    = "A"
+  ttl     = "300"
+  records = ["https://${aws_api_gateway_rest_api.api.id}.execute-api.eu-central-1.amazonaws.com/${aws_api_gateway_deployment.deployment.stage_name}"]
+}
+
 resource "aws_iam_role_policy_attachment" "cloudwatch_logs_attachment" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.cloudwatch_logs.arn
