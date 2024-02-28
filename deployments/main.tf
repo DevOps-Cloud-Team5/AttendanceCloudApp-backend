@@ -155,6 +155,7 @@ resource "aws_s3_bucket_website_configuration" "redirect_bucket" {
 
   redirect_all_requests_to {
     host_name = "${aws_api_gateway_rest_api.api.id}.execute-api.eu-central-1.amazonaws.com"
+    protocol = "https"
   }
 }
 
