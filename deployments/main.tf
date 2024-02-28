@@ -150,11 +150,11 @@ resource "aws_iam_policy" "cloudwatch_logs" {
 EOF
 }
 
-resource "aws_s3_bucket" "redirect_bucket" {
+resource "aws_s3_bucket_website_configuration" "redirect_bucket" {
   bucket = "attendunce-redirect"
 
-  website {
-    redirect_all_requests_to = "${aws_api_gateway_rest_api.api.id}.execute-api.eu-central-1.amazonaws.com"
+  redirect_all_requests_to {
+    host_name = "${aws_api_gateway_rest_api.api.id}.execute-api.eu-central-1.amazonaws.com"
   }
 }
 
