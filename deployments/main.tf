@@ -156,7 +156,7 @@ resource "aws_route53_zone" "primary" {
 
 resource "aws_route53_record" "www" {
   zone_id = aws_route53_zone.primary.zone_id
-  name    = "attendunce.click"
+  name    = "www.attendunce.click"
   type    = "CNAME"
   ttl     = "300"
   records = ["https://${aws_api_gateway_rest_api.api.id}.execute-api.eu-central-1.amazonaws.com/${aws_api_gateway_deployment.deployment.stage_name}"]
