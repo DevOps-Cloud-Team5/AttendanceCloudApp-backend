@@ -20,4 +20,5 @@ from .views import test
 
 urlpatterns = [
     path('test', test),
+    # path()
 ]
