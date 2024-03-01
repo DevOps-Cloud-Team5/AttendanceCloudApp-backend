@@ -53,6 +53,13 @@ MIDDLEWARE = [
 	'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'AUTH_HEADER_TYPES': ('JWT',),
+}
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 
@@ -73,7 +80,10 @@ INSTALLED_APPS = [
 	'django.contrib.staticfiles',
 	'corsheaders',
 	'rest_framework',
+ 	"api.apps.ApiConfig"
 ]
+
+AUTH_USER_MODEL = "api.User"
 
 WSGI_APPLICATION = 'api.wsgi.application'
 
