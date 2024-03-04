@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from .views import test, test_auth, RegisterView, CustomTokenView, GetUser, GetUsersByRole
+from .views import test, test_auth, RegisterView, CustomTokenView, GetUser, GetUsersByRole, CourseCreateView, GetCourses
 
 urlpatterns = [
     path('test', test),
@@ -31,4 +31,6 @@ urlpatterns = [
     path('user/get/<username>', GetUser.as_view(), name='auth_getuser'),
     path('users/get/<role>', GetUsersByRole.as_view(), name='auth_getusers'),
     
+    path('course/create', CourseCreateView.as_view(), name='course_create'),
+    path('courses/get', GetCourses.as_view(), name='course_getall'),
 ]

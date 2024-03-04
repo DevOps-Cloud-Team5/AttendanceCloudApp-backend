@@ -6,12 +6,9 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.validators import UniqueValidator
 
-User = get_user_model()
+from .models import Course
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'
+User = get_user_model()
 
 # What information is stored in the JWT access token
 class CustomTokenSerializer(TokenObtainPairSerializer):
@@ -21,6 +18,16 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         token['email'] = user.email
         return token
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+        
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = '__all__'
 
 # Defines the rules for registering a new user. Required fields, validation rules etc.
 class RegisterSerializer(serializers.ModelSerializer):
@@ -46,3 +53,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+    
+class CourseCreateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=True, validators=[UniqueValidator(queryset=Course.objects.all(), message="course name is already in use")])
+
+    class Meta:
+        model = Course
+        fields = ('name',)
+
+    def validate(self, attrs):
+        return attrs
+
+    def create(self, validated_data):
+        c = Course.objects.create(name=validated_data['name'])
+        c.save()
+        return c
