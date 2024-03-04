@@ -15,10 +15,11 @@ Including another URLconf
 """
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from .views import test, RegisterView, CustomTokenView
+from .views import test, test_auth, RegisterView, CustomTokenView, GetUser, GetUsersByRole
 
 urlpatterns = [
     path('test', test),
+    path('testauth', test_auth.as_view()),
     
     # Manage tokens, by requesting one with credentials, refreshing or verifying one.
     path('token/', CustomTokenView.as_view(), name='token_obtain_pair'),
@@ -27,4 +28,7 @@ urlpatterns = [
     
     # Register new user
     path('user/register/', RegisterView.as_view(), name='auth_register'),
+    path('user/get/<username>', GetUser.as_view(), name='auth_getuser'),
+    path('users/get/<role>', GetUsersByRole.as_view(), name='auth_getusers'),
+    
 ]
