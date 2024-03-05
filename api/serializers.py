@@ -69,6 +69,7 @@ class CourseCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        c = Course.objects.create(name=validated_data['course_name'])
+        course_id = validated_data.get("course_id", "") or "_".join(validated_data['course_name'].lower().split())
+        c = Course.objects.create(course_name=validated_data['course_name'], course_id=course_id)
         c.save()
         return c

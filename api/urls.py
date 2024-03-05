@@ -54,9 +54,9 @@ urlpatterns = [
     
     # All course paths
     path('course/create/', CreateCourseView.as_view(), name='course_create'),
-    path('course/update/<course_name>', UpdateCourseView.as_view(), name='course_update'),
-    path('course/delete/<course_name>', DestroyCourseView.as_view(), name='course_delete'),
-    path('course/enroll/<course_name>', EnrollCourseView.as_view(), name='course_enroll'),
+    path('course/update/<course_id>', UpdateCourseView.as_view(), name='course_update'),
+    path('course/delete/<course_id>', DestroyCourseView.as_view(), name='course_delete'),
+    path('course/enroll/<course_id>', EnrollCourseView.as_view(), name='course_enroll'),
     path('course/get/', GetCourseByName.as_view(), name='course_get'),
     path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),
 ]

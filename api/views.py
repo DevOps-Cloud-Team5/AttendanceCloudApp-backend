@@ -148,7 +148,7 @@ class CreateCourseView(generics.CreateAPIView):
 class UpdateCourseView(generics.UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
-    lookup_field = 'course_name'
+    lookup_field = 'course_id'
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -156,7 +156,7 @@ class UpdateCourseView(generics.UpdateAPIView):
 class DestroyCourseView(generics.DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
-    lookup_field = 'course_name'
+    lookup_field = 'course_id'
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -164,7 +164,7 @@ class DestroyCourseView(generics.DestroyAPIView):
 class EnrollCourseView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
-    lookup_field = 'course_name'
+    lookup_field = 'course_id'
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -182,8 +182,7 @@ class EnrollCourseView(generics.GenericAPIView):
         key, target_list = ("enrolled_students", obj.enrolled_students) if request.user.role == "student" else ("teachers", obj.teachers)
         
         if username in target_list:
-            return Response({"error", f"user '{username}' is already part of '{obj.course_name}'"}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response({"error", f"user '{username}' is already part of '{obj.course_id}'"}, status=status.HTTP_400_BAD_REQUEST)
         
         data = {key: target_list + [username]}
         serializer = self.get_serializer(obj, data=data, partial=True)
@@ -201,11 +200,11 @@ class GetCourseByName(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
-    def get(self, _, course_name):
-        queryset = self.get_queryset().filter(course_name=course_name)
+    def get(self, _, course_id):
+        queryset = self.get_queryset().filter(course_id=course_id)
         serializer = self.serializer_class(queryset, many=True)
         if len(serializer.data) == 0:
-            return Response({"error": f"course '{course_name}' not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"course '{course_id}' not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(serializer.data, status=status.HTTP_200_OK)
 
