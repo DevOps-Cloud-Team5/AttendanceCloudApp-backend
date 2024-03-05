@@ -1,4 +1,4 @@
-import os
+import os, datetime
 from decouple import config
 
 
@@ -128,3 +128,14 @@ AUTH_PASSWORD_VALIDATORS = [
 	{'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
 	{'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(minutes=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    
+	'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'AUTH_HEADER_TYPES': ('JWT',),
+}

@@ -12,3 +12,14 @@ class User(AbstractUser):
         choices=AccountRoles,
         default=AccountRoles.STUDENT,
     )
+    
+class Course(models.Model):
+    course_name = models.CharField(max_length=50)
+    schedule = models.JSONField(default=list) 
+    enrolled_students = models.JSONField(default=list)
+    teachers = models.JSONField(default=list)
+
+    objects = models.Manager()
+
+    def __str__(self):
+        return str(self.name)
