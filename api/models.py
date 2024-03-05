@@ -14,7 +14,7 @@ class User(AbstractUser):
     )
     
 class Course(models.Model):
-    name = models.CharField(max_length=50)
+    course_name = models.CharField(max_length=50)
     schedule = models.JSONField(default=list) 
     enrolled_students = models.JSONField(default=list)
     teachers = models.JSONField(default=list)

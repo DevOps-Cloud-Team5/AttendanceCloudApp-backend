@@ -15,22 +15,48 @@ Including another URLconf
 """
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from .views import test, test_auth, RegisterView, CustomTokenView, GetUser, GetUsersByRole, CourseCreateView, GetCourses
+
+from .views import (
+                    ping, 
+                    genAdmin, 
+                    
+                    GetTokenView, 
+                    
+                    CreateUserView, 
+                    UpdateUserView, 
+                    DestroyUserView,
+                    GetUserByUsername, 
+                    GetUsersByRole, 
+                    
+                    CreateCourseView, 
+                    UpdateCourseView, 
+                    DestroyCourseView, 
+                    EnrollCourseView,
+                    GetCourseByName, 
+                    GetCoursesAll, 
+                    )
 
 urlpatterns = [
-    path('test', test),
-    path('testauth', test_auth.as_view()),
+    path('ping', ping),
+    path('genadmin', genAdmin),
     
-    # Manage tokens, by requesting one with credentials, refreshing or verifying one.
-    path('token/', CustomTokenView.as_view(), name='token_obtain_pair'),
+    # Manage tokens, by requesting one with credentials, refreshing or verifying one. Essentially the login API
+    path('token/', GetTokenView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     
-    # Register new user
-    path('user/register/', RegisterView.as_view(), name='auth_register'),
-    path('user/get/<username>', GetUser.as_view(), name='auth_getuser'),
-    path('users/get/<role>', GetUsersByRole.as_view(), name='auth_getusers'),
+    # All user paths
+    path('user/register/', CreateUserView.as_view(), name='user_register'),
+    path('user/update/<username>', UpdateUserView.as_view(), name='user_update'),
+    path('user/delete/<username>', DestroyUserView.as_view(), name='user_delete'),
+    path('user/get/<username>', GetUserByUsername.as_view(), name='user_get'),
+    path('user/getrole/<role>', GetUsersByRole.as_view(), name='user_getrole'),
     
-    path('course/create', CourseCreateView.as_view(), name='course_create'),
-    path('courses/get', GetCourses.as_view(), name='course_getall'),
+    # All course paths
+    path('course/create/', CreateCourseView.as_view(), name='course_create'),
+    path('course/update/<course_name>', UpdateCourseView.as_view(), name='course_update'),
+    path('course/delete/<course_name>', DestroyCourseView.as_view(), name='course_delete'),
+    path('course/enroll/<course_name>', EnrollCourseView.as_view(), name='course_enroll'),
+    path('course/get/', GetCourseByName.as_view(), name='course_get'),
+    path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),
 ]

@@ -5,7 +5,7 @@ import os
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenSerializer, RegisterSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+from .serializers import CustomTokenSerializer, CreateUserSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
 from rest_framework import generics, authentication, permissions
 from rest_framework.response import Response
@@ -14,59 +14,204 @@ from .permissions import IsTeacher, IsAdmin, IsStudent
 from .models import Course
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
-User = get_user_model()
 
+User = get_user_model()
 __ROOT__ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def test(request):
-    return JsonResponse({"data": str(request.user.is_authenticated)})
+# ping pong
+def ping(_):
+    return JsonResponse({"ping": "pong"})
 
-class test_auth(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+# DEBUG function
+# Generate an admin account if no admin accounts exists
+# Dangerous endpoint which should be turned off in production but can be used to setup the DB
+# Ideally a better method should be used to create the first admin account, but useful for debugging
+def genAdmin(request):
+    queryset = User.objects.all()
+    admins = UserSerializer(queryset.filter(role="admin"), many=True)
+    default_admin = UserSerializer(queryset.filter(username="admin"), many=True)
+    if len(admins.data) + len(default_admin.data) != 0:
+        return JsonResponse({"error": "admin account already setup"}, status=status.HTTP_403_FORBIDDEN)
     
-    def get(self, request):
-        return JsonResponse({"data": str(request.user.is_authenticated)})
+    user = User.objects.create(
+        username='admin',
+        role='admin'
+    )
+    user.set_password('adminadmin')
+    user.save()
+    
+    return JsonResponse({"ok": "admin account created"}, status=status.HTTP_200_OK)
 
-class GetUser(generics.RetrieveAPIView):
+# Acts as the "login" API, provide username and password to get the access and refresh token
+class GetTokenView(TokenObtainPairView):
+    serializer_class = CustomTokenSerializer
+
+'''
+User API reference
+
+- Create user
+- Update user
+- Delete user
+- Get user by username
+- Get all users with a specific role
+- Get all users in a specific course (TODO)
+
+(Admins can do everything)
+Create user can only be done by Admins
+Update user can be done by the user itself, and by admins
+Delete user can only be done by Admins
+All GET requests should have authentication level of IsStudent
+'''
+
+# The register API, requires the fields outlined in the RegisterSerializer
+class CreateUserView(generics.CreateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdmin]
+    
+    queryset = User.objects.all()
+    serializer_class = CreateUserSerializer
+
+class UpdateUserView(generics.UpdateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdmin]
+    lookup_field = 'username'
+    
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    
+class DestroyUserView(generics.DestroyAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdmin]
+    lookup_field = 'username'
+    
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class GetUserByUsername(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'username'
 
     def get(self, _, username):
         queryset = self.get_queryset().filter(username=username)
         serializer = self.serializer_class(queryset, many=True)
         if len(serializer.data) == 0:
-            return Response({"error": "user not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"user '{username}' not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 class GetUsersByRole(generics.ListAPIView):
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsStudent]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
     
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'role'
 
-    def get(self, request, role : str):
+    def get(self, _, role : str):
         role = role.lower()
-        if role == "admin" and not IsAdmin().has_permission(request, None): 
-            return Response({"error": "user is not permitted to view all admin accounts"}, status=status.HTTP_401_UNAUTHORIZED)
+        # if role == "admin" and not IsAdmin().has_permission(request): 
+            # return Response({"error": "user is not permitted to view all admin accounts"}, status=status.HTTP_401_UNAUTHORIZED)
         
-        queryset = self.get_queryset().filter(role=role.capitalize())
+        queryset = self.get_queryset().filter(role=role)
         serializer = self.serializer_class(queryset, many=True)
         if len(serializer.data) == 0:
-            return Response({"error": "no users found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "no users found with that role"}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-class GetCourses(generics.ListAPIView):
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsStudent]
+'''
+Course API reference
+
+- Create course
+- Update course
+- Delete course
+- Enroll into course (has to be seperate from update)
+- Get single course by name
+- Get all courses
+
+(Admins can do everything)
+Create course can be done by Teachers
+Update course can be done by Teachers
+Delete course can be done by Teachers
+All GET requests should have authentication level of IsStudent
+'''
+
+class CreateCourseView(generics.CreateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseCreateSerializer
+
+class UpdateCourseView(generics.UpdateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    lookup_field = 'course_name'
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+
+class DestroyCourseView(generics.DestroyAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    lookup_field = 'course_name'
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+
+class EnrollCourseView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    lookup_field = 'course_name'
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    
+    def post(self, request, *args, **kwargs):
+        req = request.data
+        username = request.user.username
+        if "username" not in req or req["username"] == "":
+            return Response({"error", "username is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if request.user.role != "admin" and username != req["username"]:
+            return Response({"error", "user does not have permissions for this action"}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        obj = self.get_object()
+        key, target_list = ("enrolled_students", obj.enrolled_students) if request.user.role == "student" else ("teachers", obj.teachers)
+        
+        if username in target_list:
+            return Response({"error", f"user '{username}' is already part of '{obj.course_name}'"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        
+        data = {key: target_list + [username]}
+        serializer = self.get_serializer(obj, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        if getattr(obj, '_prefetched_objects_cache', None):
+            obj._prefetched_objects_cache = {}
+        return Response(serializer.data)
+
+class GetCourseByName(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+
+    def get(self, _, course_name):
+        queryset = self.get_queryset().filter(course_name=course_name)
+        serializer = self.serializer_class(queryset, many=True)
+        if len(serializer.data) == 0:
+            return Response({"error": f"course '{course_name}' not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GetCoursesAll(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -78,18 +223,3 @@ class GetCourses(generics.ListAPIView):
             return Response({"error": "no courses found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(serializer.data, status=status.HTTP_200_OK)
-
-# Acts as the "login" API, provide username and password to get the access and refresh token
-class CustomTokenView(TokenObtainPairView):
-    serializer_class = CustomTokenSerializer
-
-# The register API, requires the fields outlined in the RegisterSerializer
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    permission_classes = (AllowAny,)
-    serializer_class = RegisterSerializer
-    
-class CourseCreateView(generics.CreateAPIView):
-    queryset = Course.objects.all()
-    permission_classes = (AllowAny,) # Should be only IsTeacher, but for debugging keep it at this
-    serializer_class = CourseCreateSerializer
