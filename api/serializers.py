@@ -38,7 +38,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', "first_name", "last_name", "role")
+        fields = ['username', 'email', 'password', "first_name", "last_name", "role"]
 
     def validate(self, attrs):
         if attrs.get("role", "") not in ["admin", "teacher", "student", ""]:
@@ -63,7 +63,7 @@ class CourseCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ('course_name')
+        fields = ['course_name']
 
     def validate(self, attrs):
         return attrs

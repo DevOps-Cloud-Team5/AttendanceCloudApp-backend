@@ -15,9 +15,10 @@ Including another URLconf
 """
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from .views import (
-                    ping, 
+                    test, 
                     genAdmin, 
                     
                     GetTokenView, 
@@ -37,7 +38,7 @@ from .views import (
                     )
 
 urlpatterns = [
-    path('ping', ping),
+    path('test', test),
     path('genadmin', genAdmin),
     
     # Manage tokens, by requesting one with credentials, refreshing or verifying one. Essentially the login API
@@ -59,4 +60,9 @@ urlpatterns = [
     path('course/enroll/<course_id>', EnrollCourseView.as_view(), name='course_enroll'),
     path('course/get/', GetCourseByName.as_view(), name='course_get'),
     path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),
+
+    # Documentation
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional: Serve Swagger UI if you want a browsable API documentation
+    path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]

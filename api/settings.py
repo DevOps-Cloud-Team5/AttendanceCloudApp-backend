@@ -58,6 +58,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'AUTH_HEADER_TYPES': ('JWT',),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -80,6 +81,7 @@ INSTALLED_APPS = [
 	'django.contrib.staticfiles',
 	'corsheaders',
 	'rest_framework',
+    'drf_spectacular',
  	"api.apps.ApiConfig"
 ]
 
