@@ -13,8 +13,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
-from .models import Course
+from .models import Course, AccountRoles
 from .serializers import CustomTokenSerializer, CreateUserSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+
+import pdb
 
 
 User = get_user_model()
@@ -39,14 +41,15 @@ def test(request):
 # Ideally a better method should be used to create the first admin account, but useful for debugging
 def genAdmin(request):
     queryset = User.objects.all()
-    admins = UserSerializer(queryset.filter(role="admin"), many=True)
+    # pdb.set_trace()
+    admins = UserSerializer(queryset.filter(role= AccountRoles.ADMIN), many=True)
     default_admin = UserSerializer(queryset.filter(username="admin"), many=True)
     if len(admins.data) + len(default_admin.data) != 0:
         return JsonResponse({"error": "admin account already setup"}, status=status.HTTP_403_FORBIDDEN)
     
     user = User.objects.create(
         username='admin',
-        role='admin'
+        role=AccountRoles.ADMIN
     )
     user.set_password('adminadmin')
     user.save()
