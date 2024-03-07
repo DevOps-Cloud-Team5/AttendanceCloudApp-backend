@@ -19,7 +19,7 @@ class AccountRoles(models.TextChoices):
     ADMIN = "A", "Admin"
 
 class User(AbstractBaseUser):
-    user_id = models.BigAutoField(primary_key=True)
+
     username = models.CharField(
         ("username"),
         max_length=150,
@@ -31,7 +31,7 @@ class User(AbstractBaseUser):
     first_name = models.CharField(("first name"), max_length=150, blank=True)
     last_name = models.CharField(("last name"), max_length=150, blank=True)
     email = models.EmailField(("email address"), blank=True)
-    force_pw_change = models.BinaryField(("force the user to change password"), default=False)
+    force_pw_change = models.BooleanField(default=False)
 
     role = models.CharField(
         max_length=1,
@@ -50,7 +50,7 @@ class User(AbstractBaseUser):
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_classes(self):
-        return [uc.course for uc in UserCourse.objects.filter(user__user_id=self.user_id)]
+        return [uc.course for uc in UserCourse.objects.filter(user__id=self.id)]
 
     
 class Course(models.Model):
