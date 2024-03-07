@@ -13,13 +13,13 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 #         choices=AccountRoles,
 #         default=AccountRoles.STUDENT,
 #     )
-    
+class AccountRoles(models.TextChoices):
+    STUDENT = "S", "Student"
+    TEACHER = "T", "Teacher"
+    ADMIN = "A", "Admin"
+
 class User(AbstractBaseUser):
-    class AccountRoles(models.TextChoices):
-        STUDENT = "student"
-        TEACHER = "teacher"
-        ADMIN = "admin"
-    
+    user_id = models.BigAutoField(primary_key=True)
     username = models.CharField(
         ("username"),
         max_length=150,
@@ -31,11 +31,11 @@ class User(AbstractBaseUser):
     first_name = models.CharField(("first name"), max_length=150, blank=True)
     last_name = models.CharField(("last name"), max_length=150, blank=True)
     email = models.EmailField(("email address"), blank=True)
-    courses = models.JSONField(default=list, blank=True) 
+    force_pw_change = models.BinaryField(("force the user to change password"), default=False)
 
     role = models.CharField(
-        max_length=7,
-        choices=AccountRoles,
+        max_length=1,
+        choices=AccountRoles.choices,
         default=AccountRoles.STUDENT,
     )
 
@@ -48,15 +48,31 @@ class User(AbstractBaseUser):
     def clean(self):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
+
+    def get_classes(self):
+        return [uc.course for uc in UserCourse.objects.filter(user__user_id=self.user_id)]
+
     
 class Course(models.Model):
-    course_id = models.CharField(max_length=50, primary_key=True)
     course_name = models.CharField(max_length=50)
     schedule = models.JSONField(default=list) 
-    enrolled_students = models.JSONField(default=list)
-    teachers = models.JSONField(default=list)
 
     objects = models.Manager()
 
     def __str__(self):
         return str(self.name)
+    
+    def get_enrolled_students(self):
+        return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.STUDENT)]
+
+    def get_teachers(self):
+        return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.TEACHER)]
+
+    def add_user_to_course(self, user: User):
+        UserCourse.objects.create(user=user, course=self)
+
+# This is for storing users (teachers/students) in courses
+class UserCourse(models.Model):
+    user = models.ForeignKey(User, null=False, related_name='user', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, null=False, related_name='course', on_delete=models.CASCADE)
+
