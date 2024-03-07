@@ -63,7 +63,7 @@ class CourseCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ('course_name')
+        fields = ('course_name',)
 
     def validate(self, attrs):
         return attrs
