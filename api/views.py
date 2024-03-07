@@ -172,6 +172,7 @@ class DestroyCourseView(generics.DestroyAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
+# TODO: fix which username is enrolled
 class EnrollCourseView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
@@ -192,10 +193,10 @@ class EnrollCourseView(generics.GenericAPIView):
         obj = self.get_object()
         key, target_list = ("enrolled_students", obj.enrolled_students) if request.user.role == "student" else ("teachers", obj.teachers)
         
-        if username in target_list:
-            return Response({"error", f"user '{username}' is already part of '{obj.course_id}'"}, status=status.HTTP_400_BAD_REQUEST)
+        if req["username"] in target_list:
+            return Response({"error", f"user '{req["username"]}' is already part of '{obj.course_id}'"}, status=status.HTTP_400_BAD_REQUEST)
         
-        data = {key: target_list + [username]}
+        data = {key: target_list + [req["username"]]}
         serializer = self.get_serializer(obj, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
