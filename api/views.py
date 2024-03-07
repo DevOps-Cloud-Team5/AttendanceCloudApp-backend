@@ -1,26 +1,37 @@
+import os
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
-import os
 
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenSerializer, CreateUserSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
-
-from rest_framework import generics, authentication, permissions
+from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from .permissions import IsTeacher, IsAdmin, IsStudent
-from .models import Course
+from rest_framework.decorators import api_view
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from drf_spectacular.utils import extend_schema, OpenApiResponse
+
+from .permissions import IsTeacher, IsAdmin, IsStudent
+from .models import Course
+from .serializers import CustomTokenSerializer, CreateUserSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+
 
 User = get_user_model()
 __ROOT__ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# ping pong
-def ping(_):
-    return JsonResponse({"ping": "pong"})
+@extend_schema(
+    methods=['GET'],  # Specify methods if @api_view is not used, otherwise redundant
+    summary="Ping Pong",
+    description="Returns a simple ping to a pong response.",
+    responses={
+        status.HTTP_200_OK: OpenApiResponse(description="Success - Returns a ping pong response."),
+        # Add more status codes as needed
+    }
+)
+@api_view(['GET'])
+def test(request):
+    return Response({"ping": "pong"}, 200)
 
 # DEBUG function
 # Generate an admin account if no admin accounts exists
