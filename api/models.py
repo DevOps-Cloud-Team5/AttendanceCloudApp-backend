@@ -14,9 +14,9 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 #         default=AccountRoles.STUDENT,
 #     )
 class AccountRoles(models.TextChoices):
-    STUDENT = "S", "Student"
-    TEACHER = "T", "Teacher"
-    ADMIN = "A", "Admin"
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
 
 class User(AbstractBaseUser):
 
@@ -34,7 +34,7 @@ class User(AbstractBaseUser):
     force_pw_change = models.BooleanField(default=False)
 
     role = models.CharField(
-        max_length=1,
+        # max_length=1,
         choices=AccountRoles.choices,
         default=AccountRoles.STUDENT,
     )
