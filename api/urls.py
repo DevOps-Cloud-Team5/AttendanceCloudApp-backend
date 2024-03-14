@@ -18,6 +18,7 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from .views import (
+                    MassEnrollCourseView,
                     test, 
                     genAdmin, 
                     
@@ -55,10 +56,11 @@ urlpatterns = [
     
     # All course paths
     path('course/create/', CreateCourseView.as_view(), name='course_create'),
-    path('course/update/<course_id>', UpdateCourseView.as_view(), name='course_update'),
-    path('course/delete/<course_id>', DestroyCourseView.as_view(), name='course_delete'),
-    path('course/enroll/<course_id>', EnrollCourseView.as_view(), name='course_enroll'),
-    path('course/get/', GetCourseByName.as_view(), name='course_get'),
+    path('course/update/<pk>', UpdateCourseView.as_view(), name='course_update'),
+    path('course/delete/<pk>', DestroyCourseView.as_view(), name='course_delete'),
+    path('course/enroll/<pk>', EnrollCourseView.as_view(), name='course_enroll'),
+    path('course/mass_enroll/<pk>', MassEnrollCourseView.as_view(), name='course_mass_enroll'),
+    path('course/get/<pk>', GetCourseByName.as_view(), name='course_get'),
     path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),
 
     # Documentation

@@ -1,0 +1,22 @@
+{
+	"name": "attendancecloudapp-backend",
+	"version": "1.0.0",
+	"description": "A backend service for the AttendanceCloudApp, includes OpenAPI spec to Postman collection conversion.",
+	"main": "index.js",
+	"scripts": {
+        "test": "./test_backend.sh"
+	},
+	"keywords": [
+		"attendance",
+		"cloud",
+		"api",
+		"openapi",
+		"postman"
+	],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"newman": "^6.1.1",
+		"openapi-to-postmanv2": "^4.20.0"
+	}
+}
