@@ -14,9 +14,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView, TokenBlacklistView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-
 from .views import (
                     MassEnrollCourseView,
                     test, 
@@ -46,6 +45,7 @@ urlpatterns = [
     path('token/', GetTokenView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     
     # All user paths
     path('user/register/', CreateUserView.as_view(), name='user_register'),
