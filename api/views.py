@@ -14,7 +14,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
 from .models import Course, AccountRoles
-from .serializers import CustomTokenSerializer, CreateUserSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+from .serializers import CustomTokenSerializer, CreateUserSerializer, MassEnrollSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
 import pdb
 
@@ -162,7 +162,7 @@ class CreateCourseView(generics.CreateAPIView):
 class UpdateCourseView(generics.UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
-    lookup_field = 'course_id'
+    lookup_field = 'pk'
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -170,43 +170,58 @@ class UpdateCourseView(generics.UpdateAPIView):
 class DestroyCourseView(generics.DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
-    lookup_field = 'course_id'
+    lookup_field = 'pk'
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
-# TODO: fix which username is enrolled
 class EnrollCourseView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
-    lookup_field = 'course_id'
+    lookup_field = 'pk'
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     
     def post(self, request, *args, **kwargs):
-        req = request.data
-        username = request.user.username
-        if "username" not in req or req["username"] == "":
-            return Response({"error", "username is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if request.user.role == AccountRoles.ADMIN: 
+            return Response({"error": f"cannot enroll an admin account into a course"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if request.user.role != "admin" and username != req["username"]:
-            return Response({"error", "user does not have permissions for this action"}, status=status.HTTP_401_UNAUTHORIZED)
+        obj : Course = self.get_object()
+        user = request.user
+        username = user.username
+        
+        if obj.is_user_enrolled(request.user):
+            return Response({"error": f"{username} is already enrolled in {obj.course_name}"}, status=status.HTTP_400_BAD_REQUEST)
             
-        obj = self.get_object()
-        key, target_list = ("enrolled_students", obj.enrolled_students) if request.user.role == "student" else ("teachers", obj.teachers)
-        
-        if req["username"] in target_list:
-            return Response({"error", f"user '{req.username}' is already part of '{obj.course_id}'"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        data = {key: target_list + [req["username"]]}
-        serializer = self.get_serializer(obj, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        obj.add_user_to_course(user)
 
         if getattr(obj, '_prefetched_objects_cache', None):
             obj._prefetched_objects_cache = {}
-        return Response(serializer.data)
+            
+        return Response({"ok": f"succesfully enrolled {username} in {obj.course_name}"}, status=status.HTTP_200_OK)
+
+class MassEnrollCourseView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdmin]
+    lookup_field = 'pk'
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    
+    # Mass enroll students through admin accounts 
+    def post(self, request, *args, **kwargs):
+        course : Course = self.get_object()
+        result = MassEnrollSerializer(data=request.data, context={ "course": course })
+        result.is_valid(raise_exception=True)
+        
+        queryset = User.objects.all()
+        usernames = result.data["usernames"]
+        for username in usernames:
+            user = queryset.filter(username=username)[0]
+            course.add_user_to_course(user)
+        
+        return Response({"ok": f"succesfully enrolled {len(usernames)} students"}, status=status.HTTP_200_OK)
 
 class GetCourseByName(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
@@ -215,11 +230,11 @@ class GetCourseByName(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
-    def get(self, _, course_id):
-        queryset = self.get_queryset().filter(course_id=course_id)
+    def get(self, _, pk):
+        queryset = self.get_queryset().filter(pk=pk)
         serializer = self.serializer_class(queryset, many=True)
         if len(serializer.data) == 0:
-            return Response({"error": f"course '{course_id}' not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(serializer.data, status=status.HTTP_200_OK)
 

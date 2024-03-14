@@ -61,7 +61,6 @@ class LectureTypes(models.TextChoices):
     
 class Course(models.Model):
     course_name = models.CharField(max_length=50)
-    schedule = models.JSONField(default=list) 
 
     objects = models.Manager()
 
@@ -76,6 +75,9 @@ class Course(models.Model):
 
     def get_lectures(self):
         return [lecture for lecture in CourseLecture.objects.filter(course=self)]
+
+    def is_user_enrolled(self, user : User):
+        return bool(UserCourse.objects.filter(user=user, course=self))
 
     def add_user_to_course(self, user: User):
         UserCourse.objects.create(user=user, course=self).save()
@@ -118,7 +120,7 @@ class AttendenceAcknowledgement(models.Model):
     attended_student = models.BooleanField(default=False)
     attended_teacher = models.BooleanField(default=False)
     student = models.ForeignKey(User, null=False, related_name='user_ack', on_delete=models.CASCADE)
-    lecture = models.ForeignKey(CourseLecture, null=False, related_name='lecture', on_delete=models.CASCADE)
+    lecture = models.ForeignKey(CourseLecture, null=False, related_name='lecture_ack', on_delete=models.CASCADE)
 
 
 
