@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.validators import UniqueValidator
 
-from .models import Course
+from .models import AccountRoles, Course
 
 User = get_user_model()
 
@@ -69,7 +69,23 @@ class CourseCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        course_id = validated_data.get("course_id", "") or "_".join(validated_data['course_name'].lower().split())
-        c = Course.objects.create(course_name=validated_data['course_name'], course_id=course_id)
+        c = Course.objects.create(course_name=validated_data['course_name'])
         c.save()
         return c
+
+
+ 
+class MassEnrollSerializer(serializers.Serializer):
+    usernames = serializers.ListField(required=True, allow_empty=False, child=serializers.CharField(max_length=150))
+
+    def validate_enroll(self, username):
+        user_query = User.objects.all().filter(username=username)
+        if not user_query: raise serializers.ValidationError({"error": f"user '{username}' does not exist"})
+        if user_query[0].role == AccountRoles.ADMIN: raise serializers.ValidationError({"error": f"cannot enroll an admin account into a course"})
+        
+        course : Course = self.context.get("course")
+        if course.is_user_enrolled(user_query[0]): raise serializers.ValidationError({"error": f"user '{username}' is already enrolled in '{course.course_name}'"})
+
+    def validate(self, attrs):
+        for username in attrs["usernames"]: self.validate_enroll(username)
+        return attrs
