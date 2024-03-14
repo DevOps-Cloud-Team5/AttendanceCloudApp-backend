@@ -18,6 +18,9 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from .views import (
+                    AddLectureView,
+                    GetCourseLecturesView,
+                    GetLectureView,
                     MassEnrollCourseView,
                     test, 
                     genAdmin, 
@@ -62,6 +65,16 @@ urlpatterns = [
     path('course/mass_enroll/<pk>', MassEnrollCourseView.as_view(), name='course_mass_enroll'),
     path('course/get/<pk>', GetCourseByName.as_view(), name='course_get'),
     path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),
+    
+    path('course/lecture/<pk>/get', GetCourseLecturesView.as_view(), name='course_get_lecture'),
+    path('course/lecture/<pk>/add', AddLectureView.as_view(), name='course_add_lecture'),
+    # path('course/lecture/<pk>/update', GetCourseByName.as_view(), name='lecture_add'), # TODO
+    # path('course/lecture/<pk>/delete', GetCourseByName.as_view(), name='lecture_add'),
+
+    path('lecture/<pk>/get', GetLectureView.as_view(), name='lecture_get'),
+    path('lecture/<pk>/student_att', GetLectureView.as_view(), name='lecture_get'),
+    path('lecture/<pk>/teacher_att', GetLectureView.as_view(), name='lecture_get'),
+
 
     # Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),

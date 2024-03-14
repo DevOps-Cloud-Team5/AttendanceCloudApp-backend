@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.validators import UniqueValidator
 
-from .models import AccountRoles, Course
+from .models import AccountRoles, Course, CourseLecture, LectureTypes
 
 User = get_user_model()
 
@@ -28,6 +28,11 @@ class UserSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
+        fields = '__all__'
+        
+class LectureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseLecture
         fields = '__all__'
 
 # Defines the rules for registering a new user. Required fields, validation rules etc.
@@ -73,8 +78,6 @@ class CourseCreateSerializer(serializers.ModelSerializer):
         c.save()
         return c
 
-
- 
 class MassEnrollSerializer(serializers.Serializer):
     usernames = serializers.ListField(required=True, allow_empty=False, child=serializers.CharField(max_length=150))
 
@@ -88,4 +91,32 @@ class MassEnrollSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         for username in attrs["usernames"]: self.validate_enroll(username)
+        return attrs
+    
+class AddLectureSerializer(serializers.Serializer):
+    MINIMUM_LECTURE_LENGTH = 10 # Minimum lecture length of 10 minutes
+    
+    start_time = serializers.DateTimeField(required=True)
+    end_time = serializers.DateTimeField(required=True)
+    lecture_type = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        start_time, end_time = attrs["start_time"], attrs["end_time"]
+        if start_time > end_time:
+            raise serializers.ValidationError({"error": f"end_time has to be after start_time"})
+        
+        lecture_length = (end_time - start_time).seconds / 60
+        if lecture_length < self.MINIMUM_LECTURE_LENGTH:
+            raise serializers.ValidationError({"error": f"lecture has to be at least {self.MINIMUM_LECTURE_LENGTH} minutes"})
+            
+        lecture_type = attrs["lecture_type"]
+        if lecture_type not in LectureTypes.values: 
+            raise serializers.ValidationError({"error": f"invalid lecture type: '{lecture_type}'"})
+        
+        course : Course = self.context.get("course")
+        for lecture in course.get_lectures():
+            for timestamp in [start_time, end_time]:
+                if lecture.start_time < timestamp and timestamp < lecture.end_time:
+                    raise serializers.ValidationError({"error": "there is already an active lecture during this time range"})
+        
         return attrs
