@@ -14,7 +14,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
 from .models import Course, AccountRoles, CourseLecture
-from .serializers import AddLectureSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MassEnrollSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+from .serializers import AddLectureSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
 import pdb
 
@@ -310,9 +310,30 @@ class SetStudentAttView(generics.GenericAPIView):
     
     def post(self, request, *args, **kwargs):
         if request.user.role != AccountRoles.STUDENT:
-            return Response({"error": f"only a student can set their attendence to a lecture"}, status=status.HTTP_200_OK)
+            return Response({"error": f"cannot set the attendence of a non-student"}, status=status.HTTP_200_OK)
             
-        course : CourseLecture = self.get_object()
-        
+        lecture : CourseLecture = self.get_object()
+        lecture.set_attendence_user(request.user, teacher=False)
         
         return Response({"ok": f"successfully set attendence"}, status=status.HTTP_200_OK)
+    
+class SetTeacherAttView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    lookup_field = 'pk'
+    
+    queryset = CourseLecture.objects.all()
+    serializer_class = CourseLecture
+    
+    def post(self, request, *args, **kwargs):
+        lecture : CourseLecture = self.get_object()
+        result = SetAttendenceTeacherSerializer(data=request.data, context={ "course": lecture.course })
+        result.is_valid(raise_exception=True)
+        
+        queryset = User.objects.all()
+        usernames = result.data["usernames"]
+        for username in usernames:
+            user = queryset.filter(username=username)[0]
+            lecture.set_attendence_user(user, teacher=True)
+        
+        return Response({"ok": f"succesfully set attendence for {len(usernames)} students"}, status=status.HTTP_200_OK)

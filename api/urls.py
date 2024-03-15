@@ -22,6 +22,8 @@ from .views import (
                     GetCourseLecturesView,
                     GetLectureView,
                     MassEnrollCourseView,
+                    SetStudentAttView,
+                    SetTeacherAttView,
                     test, 
                     genAdmin, 
                     
@@ -72,8 +74,8 @@ urlpatterns = [
     # path('course/lecture/<pk>/delete', GetCourseByName.as_view(), name='lecture_add'),
 
     path('lecture/<pk>/get', GetLectureView.as_view(), name='lecture_get'),
-    path('lecture/<pk>/student_att', GetLectureView.as_view(), name='lecture_get'),
-    path('lecture/<pk>/teacher_att', GetLectureView.as_view(), name='lecture_get'),
+    path('lecture/<pk>/student_att', SetStudentAttView.as_view(), name='lecture_att_student'),
+    path('lecture/<pk>/teacher_att', SetTeacherAttView.as_view(), name='lecture_att_teacher'),
 
 
     # Documentation

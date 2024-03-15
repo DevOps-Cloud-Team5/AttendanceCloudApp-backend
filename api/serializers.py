@@ -120,3 +120,18 @@ class AddLectureSerializer(serializers.Serializer):
                     raise serializers.ValidationError({"error": "there is already an active lecture during this time range"})
         
         return attrs
+    
+class SetAttendenceTeacherSerializer(serializers.Serializer):
+    usernames = serializers.ListField(required=True, allow_empty=False, child=serializers.CharField(max_length=150))
+
+    def validate_attendence(self, username):
+        user_query = User.objects.all().filter(username=username)
+        if not user_query: raise serializers.ValidationError({"error": f"user '{username}' does not exist"})
+        if user_query[0].role != AccountRoles.STUDENT: raise serializers.ValidationError({"error": f"cannot set the attendence of a non-student: '{username}' is {user_query[0].role}"})
+        
+        course : Course = self.context.get("course")
+        if not course.is_user_enrolled(user_query[0]): raise serializers.ValidationError({"error": f"user '{username}' is not enrolled in '{course.course_name}'"})
+
+    def validate(self, attrs):
+        for username in attrs["usernames"]: self.validate_enroll(username)
+        return attrs
