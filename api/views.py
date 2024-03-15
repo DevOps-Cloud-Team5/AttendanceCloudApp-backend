@@ -13,8 +13,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
-from .models import Course, AccountRoles
-from .serializers import CustomTokenSerializer, CreateUserSerializer, MassEnrollSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+from .models import Course, AccountRoles, CourseLecture
+from .serializers import AddLectureSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MassEnrollSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
 import pdb
 
@@ -110,11 +110,10 @@ class GetUserByUsername(generics.RetrieveAPIView):
 
     def get(self, _, username):
         queryset = self.get_queryset().filter(username=username)
-        serializer = self.serializer_class(queryset, many=True)
-        if len(serializer.data) == 0:
+        if not queryset:
             return Response({"error": f"user '{username}' not found"}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(queryset[0])
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class GetUsersByRole(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
@@ -175,6 +174,35 @@ class DestroyCourseView(generics.DestroyAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
+class GetCourseByName(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+
+    def get(self, _, pk):
+        queryset = self.get_queryset().filter(pk=pk)
+        if not queryset:
+            return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset[0])
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GetCoursesAll(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+
+    def get(self, _):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        if len(serializer.data) == 0:
+            return Response({"error": "no courses found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
 class EnrollCourseView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
@@ -223,32 +251,68 @@ class MassEnrollCourseView(generics.GenericAPIView):
         
         return Response({"ok": f"succesfully enrolled {len(usernames)} students"}, status=status.HTTP_200_OK)
 
-class GetCourseByName(generics.RetrieveAPIView):
+class GetCourseLecturesView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
+    lookup_field = 'pk'
     
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+
+    def get(self, _, *args, **kwargs):
+        course : Course = self.get_object()
+        lectures = course.get_lectures()      
+        serializer = LectureSerializer(lectures, many=True)
+        if len(serializer.data) == 0:
+            return Response({"error": "no lectures found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AddLectureView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    lookup_field = 'pk'
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    
+    def post(self, request, *args, **kwargs):
+        course : Course = self.get_object()
+        result = AddLectureSerializer(data=request.data, context={ "course": course })
+        result.is_valid(raise_exception=True)
+        
+        data = result.data
+        course.add_lecture_to_course(data["start_time"], data["end_time"], data["lecture_type"])
+        
+        return Response({"ok": f"successfully created lecture"}, status=status.HTTP_200_OK)
+    
+class GetLectureView(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    
+    queryset = CourseLecture.objects.all()
+    serializer_class = LectureSerializer
 
     def get(self, _, pk):
         queryset = self.get_queryset().filter(pk=pk)
-        serializer = self.serializer_class(queryset, many=True)
-        if len(serializer.data) == 0:
+        if not queryset:
             return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-class GetCoursesAll(generics.ListAPIView):
+        serializer = self.serializer_class(queryset[0])
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class SetStudentAttView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
+    lookup_field = 'pk'
     
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
-
-    def get(self, _):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        if len(serializer.data) == 0:
-            return Response({"error": "no courses found"}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(serializer.data, status=status.HTTP_200_OK)
+    queryset = CourseLecture.objects.all()
+    serializer_class = CourseLecture
+    
+    def post(self, request, *args, **kwargs):
+        if request.user.role != AccountRoles.STUDENT:
+            return Response({"error": f"only a student can set their attendence to a lecture"}, status=status.HTTP_200_OK)
+            
+        course : CourseLecture = self.get_object()
+        
+        
+        return Response({"ok": f"successfully set attendence"}, status=status.HTTP_200_OK)
