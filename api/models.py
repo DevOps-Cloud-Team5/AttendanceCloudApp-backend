@@ -74,7 +74,10 @@ class Course(models.Model):
         return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.TEACHER)]
 
     def get_lectures(self):
-        return [lecture for lecture in CourseLecture.objects.filter(course=self)]
+        return CourseLecture.objects.filter(course=self)
+
+    def get_lectures_week(self, year : int, week : int):
+        return CourseLecture.objects.filter(course=self, start_time__year=year, start_time__week=week)
 
     def is_user_enrolled(self, user : User):
         return bool(UserCourse.objects.filter(user=user, course=self))
