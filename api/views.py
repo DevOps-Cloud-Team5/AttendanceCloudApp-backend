@@ -195,12 +195,15 @@ class GetCoursesAll(generics.ListAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
-    def get(self, _):
+    def get(self, request):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         if len(serializer.data) == 0:
             return Response({"error": "no courses found"}, status=status.HTTP_404_NOT_FOUND)
         else:
+            for course_serialized in serializer.data:
+                course : Course = queryset.filter(pk=course_serialized["id"])[0]
+                course_serialized["enrolled"] = course.is_user_enrolled(user=request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EnrollCourseView(generics.GenericAPIView):
