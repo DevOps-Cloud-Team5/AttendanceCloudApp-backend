@@ -50,7 +50,7 @@ class User(AbstractBaseUser):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
 
-    def get_classes(self):
+    def get_enrolled_courses(self):
         return [uc.course for uc in UserCourse.objects.filter(user__id=self.id)]
 
 class LectureTypes(models.TextChoices):

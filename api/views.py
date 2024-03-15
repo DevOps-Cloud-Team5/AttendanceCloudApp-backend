@@ -343,3 +343,25 @@ class SetTeacherAttView(generics.GenericAPIView):
             lecture.set_attendence_user(user, teacher=True)
         
         return Response({"ok": f"succesfully set attendence for {len(usernames)} students"}, status=status.HTTP_200_OK)
+    
+class GetScheduleView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    
+    def get(self, request, *args, **kwargs):
+        user = User.objects.all().filter(username=request.user.username)[0]
+        courses = user.get_enrolled_courses()
+        all_lectures = []
+        for course in courses:
+            lectures_obj = course.get_lectures()
+            lectures = LectureSerializer(lectures_obj, many=True)
+            for i, lecture_obj in enumerate(lectures_obj):
+                att = lecture_obj.get_attendence_user(user)
+                lectures.data[i]["attended_student"] = att.attended_student if att is not None else False
+                lectures.data[i]["attended_teacher"] = att.attended_teacher if att is not None else False
+            all_lectures += lectures.data
+
+        # Sort chronological order
+        all_lectures.sort(key= lambda x : datetime.datetime.fromisoformat(x["start_time"]))
+
+        return Response(all_lectures)

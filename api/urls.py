@@ -21,6 +21,7 @@ from .views import (
                     AddLectureView,
                     GetCourseLecturesView,
                     GetLectureView,
+                    GetScheduleView,
                     MassEnrollCourseView,
                     SetStudentAttView,
                     SetTeacherAttView,
@@ -77,6 +78,7 @@ urlpatterns = [
     path('lecture/<pk>/student_att', SetStudentAttView.as_view(), name='lecture_att_student'),
     path('lecture/<pk>/teacher_att', SetTeacherAttView.as_view(), name='lecture_att_teacher'),
 
+    path('schedule/get', GetScheduleView.as_view(), name='schedule_get'),
 
     # Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
