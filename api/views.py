@@ -1,3 +1,4 @@
+import datetime
 import os
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
@@ -264,7 +265,7 @@ class GetCourseLecturesView(generics.ListAPIView):
 
     def get(self, _, *args, **kwargs):
         course : Course = self.get_object()
-        lectures = course.get_lectures()      
+        lectures = course.get_lectures()   
         serializer = LectureSerializer(lectures, many=True)
         if len(serializer.data) == 0:
             return Response({"error": "no lectures found"}, status=status.HTTP_404_NOT_FOUND)
@@ -285,7 +286,9 @@ class AddLectureView(generics.GenericAPIView):
         result.is_valid(raise_exception=True)
         
         data = result.data
-        course.add_lecture_to_course(data["start_time"], data["end_time"], data["lecture_type"])
+        start_time = datetime.datetime.fromisoformat(data["start_time"])
+        end_time = datetime.datetime.fromisoformat(data["end_time"])
+        course.add_lecture_to_course(start_time, end_time, data["lecture_type"])
         
         return Response({"ok": f"successfully created lecture"}, status=status.HTTP_200_OK)
     

@@ -102,6 +102,7 @@ class AddLectureSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         start_time, end_time = attrs["start_time"], attrs["end_time"]
+        
         if start_time > end_time:
             raise serializers.ValidationError({"error": f"end_time has to be after start_time"})
         
@@ -115,10 +116,10 @@ class AddLectureSerializer(serializers.Serializer):
         
         course : Course = self.context.get("course")
         for lecture in course.get_lectures():
-            for timestamp in [start_time, end_time]:
-                if lecture.start_time < timestamp and timestamp < lecture.end_time:
-                    raise serializers.ValidationError({"error": "there is already an active lecture during this time range"})
-        
+            if lecture.start_time <= start_time and start_time < lecture.end_time:
+                raise serializers.ValidationError({"error": "there is already an active lecture during this time range"})
+            if lecture.start_time < end_time and end_time <= lecture.end_time:
+                raise serializers.ValidationError({"error": "there is already an active lecture during this time range"})
         return attrs
     
 class SetAttendenceTeacherSerializer(serializers.Serializer):
