@@ -1,5 +1,6 @@
 import datetime
 import os
+from typing import List
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 
@@ -344,19 +345,26 @@ class SetTeacherAttView(generics.GenericAPIView):
         
         return Response({"ok": f"succesfully set attendence for {len(usernames)} students"}, status=status.HTTP_200_OK)
     
+    
 class GetScheduleView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
-    def get(self, request, *args, **kwargs):
+    def get(self, request, year, week):
+        if not year.isdigit() or int(year) < 1970:
+            return Response({"error": f"invalid year parameter"}, status=status.HTTP_400_BAD_REQUEST)
+        if not week.isdigit() or int(week) < 0 or int(week) > 52:
+            return Response({"error": f"invalid week parameter"}, status=status.HTTP_400_BAD_REQUEST)
+            
         user = User.objects.all().filter(username=request.user.username)[0]
-        courses = user.get_enrolled_courses()
+        courses : List[Course] = user.get_enrolled_courses()
         all_lectures = []
-        for course in courses:
-            lectures_obj = course.get_lectures()
+        for course in courses: 
+            lectures_obj = course.get_lectures_week(int(year), int(week))
             lectures = LectureSerializer(lectures_obj, many=True)
             for i, lecture_obj in enumerate(lectures_obj):
                 att = lecture_obj.get_attendence_user(user)
+                lectures.data[i]["course"] = lecture_obj.course.course_name
                 lectures.data[i]["attended_student"] = att.attended_student if att is not None else False
                 lectures.data[i]["attended_teacher"] = att.attended_teacher if att is not None else False
             all_lectures += lectures.data
