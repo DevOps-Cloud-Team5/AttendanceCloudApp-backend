@@ -102,13 +102,13 @@ class CourseLecture(models.Model):
         default=LectureTypes.LECTURE,
     )
 
-    def set_attendence_user(self, student : User, teacher=False):
+    def set_attendence_user(self, student : User, attended : bool, teacher=False):
         queryset = AttendenceAcknowledgement.objects.filter(lecture=self, student=student)
         if not queryset: ack = AttendenceAcknowledgement.objects.create(lecture=self, student=student)
         else: ack = queryset[0]
 
-        if teacher: ack.attended_teacher = True
-        else: ack.attended_student = True
+        if teacher: ack.attended_teacher = attended
+        else: ack.attended_student = attended
         ack.save()
 
     def get_attendence_user(self, student : User):
@@ -120,8 +120,8 @@ class CourseLecture(models.Model):
         return [] if not queryset else queryset[0]
 
 class AttendenceAcknowledgement(models.Model):
-    attended_student = models.BooleanField(default=False)
-    attended_teacher = models.BooleanField(default=False)
+    attended_student = models.BooleanField(default=None, null=True)
+    attended_teacher = models.BooleanField(default=None, null=True)
     student = models.ForeignKey(User, null=False, related_name='user_ack', on_delete=models.CASCADE)
     lecture = models.ForeignKey(CourseLecture, null=False, related_name='lecture_ack', on_delete=models.CASCADE)
 
