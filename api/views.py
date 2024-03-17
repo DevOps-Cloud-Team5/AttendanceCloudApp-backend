@@ -308,7 +308,6 @@ class GetLectureView(generics.RetrieveAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 def setAttendence(self, request, attended):
-    print(request.user)
     if request.user.role != AccountRoles.STUDENT:
         return Response({"error": f"cannot set the attendence of a non-student"}, status=status.HTTP_200_OK)
         
@@ -326,7 +325,6 @@ class SetStudentAttView(generics.GenericAPIView):
     serializer_class = CourseLecture
     
     def post(self, request, *args, **kwargs):
-        print(request.user)
         return setAttendence(self, request, True)
         
 class UnsetStudentAttView(generics.GenericAPIView):
