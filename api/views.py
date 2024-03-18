@@ -16,9 +16,12 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
 from .models import Course, AccountRoles, CourseLecture
+
 from .serializers import AddLectureSerializer, CourseUserSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
-import pdb
+
+
+from django.core.mail import send_mail
 
 
 User = get_user_model()
@@ -36,6 +39,32 @@ __ROOT__ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 @api_view(['GET'])
 def test(request):
     return Response({"ping": "pong"}, 200)
+
+@extend_schema(
+    summary="Send Test Email",
+    description="Tries to send a test email.",
+    responses={
+        status.HTTP_200_OK: OpenApiResponse(description="Success - An email was sent."),
+        status.HTTP_400_BAD_REQUEST: OpenApiResponse(description="Failure - No email given as a parameter."),
+        status.HTTP_418_IM_A_TEAPOT: OpenApiResponse(description="Failure - The email could not be sent.")
+    }
+)
+class MailTestView(generics.CreateAPIView):
+    serializer_class = MailTestSerializer
+
+    def post(self, request, *args, **kwargs):
+        subject = 'Welcome to My Site'
+        message = 'Thank you for creating an account!'
+        from_email = 'admin@mysite.com'
+        recipient_list = [request.POST.get("email", "")]
+        if recipient_list[0] == "":
+            Response({"status": "fail"}, 400)
+        ret_code = send_mail(subject, message, from_email, recipient_list)
+        if ret_code == 1:
+            Response({"status": "success"}, 200)
+        else:
+            Response({"status": "fail", "return_code": ret_code}, 418)
+
 
 # DEBUG function
 # Generate an admin account if no admin accounts exists

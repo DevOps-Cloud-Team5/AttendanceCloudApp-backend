@@ -144,3 +144,7 @@ class SetAttendenceTeacherSerializer(serializers.Serializer):
     def validate(self, attrs):
         for username, attended in attrs["usernames"].items(): self.validate_attendence(username, attended)
         return attrs
+    
+class MailTestSerializer(serializers.Serializer):
+    email = serializers.CharField(required=True)
+    
