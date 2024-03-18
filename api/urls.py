@@ -20,6 +20,7 @@ from django_rest_passwordreset.views import ResetPasswordConfirm, ResetPasswordV
 from .views import (
                     AddLectureView,
                     GetCourseLecturesView,
+                    GetFullCoursePage,
                     GetLectureView,
                     GetScheduleView,
                     MassEnrollCourseView,
@@ -75,8 +76,9 @@ urlpatterns = [
     path('course/delete/<pk>', DestroyCourseView.as_view(), name='course_delete'),
     path('course/enroll/<pk>', EnrollCourseView.as_view(), name='course_enroll'),
     path('course/mass_enroll/<pk>', MassEnrollCourseView.as_view(), name='course_mass_enroll'),
-    path('course/get/<pk>', GetCourseByName.as_view(), name='course_get'),
+    path('course/get/<pk>', GetFullCoursePage.as_view(), name='course_get'),
     path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),
+    
     
     path('course/lecture/<pk>/get', GetCourseLecturesView.as_view(), name='course_get_lecture'),
     path('course/lecture/<pk>/add', AddLectureView.as_view(), name='course_add_lecture'),

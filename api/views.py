@@ -16,7 +16,10 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
 from .models import Course, AccountRoles, CourseLecture
-from .serializers import AddLectureSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer, MailTestSerializer
+
+from .serializers import AddLectureSerializer, CourseUserSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+
+
 
 from django.core.mail import send_mail
 
@@ -216,6 +219,48 @@ class GetCourseByName(generics.RetrieveAPIView):
         serializer = self.serializer_class(queryset[0])
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class GetFullCoursePage(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+
+    def get_attendence_stats(self, course, user):
+        lectures : List[CourseLecture] = course.get_lectures()
+        attendence_stats = {"attended": 0, "missed": 0}
+        for lecture in lectures:
+            if lecture.end_time > datetime.datetime.now(lecture.end_time.tzinfo): continue
+            att = lecture.get_attendence_user(user)
+            if att is None or not (att.attended_student and att.attended_teacher):
+                attendence_stats["missed"] += 1
+            else: attendence_stats["attended"] += 1
+        return attendence_stats
+    
+    def get(self, request, pk):
+        queryset = self.get_queryset().filter(pk=pk)
+        if not queryset:
+            return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        course : Course = queryset[0]
+        teachers = course.get_teachers()
+        students = course.get_enrolled_students()
+        
+        response_data = {}
+        response_data["id"] = pk
+        response_data["course_name"] = course.course_name
+        response_data["num_teachers"] = len(teachers)
+        response_data["num_students"] = len(students)
+        response_data["attended"] = -1
+        response_data["missed"] = -1
+        response_data["users"] = CourseUserSerializer((teachers + students), many=True).data
+    
+        user = User.objects.all().filter(username=request.user.username)[0]
+        if user.role == AccountRoles.STUDENT: 
+            response_data |= self.get_attendence_stats(course, user)
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+
 class GetCoursesAll(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
@@ -413,4 +458,5 @@ class GetScheduleView(generics.GenericAPIView):
         # Sort chronological order
         all_lectures.sort(key= lambda x : datetime.datetime.fromisoformat(x["start_time"]))
 
-        return Response(all_lectures)
+        return Response(all_lectures, status=status.HTTP_200_OK)
+    
