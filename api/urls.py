@@ -13,9 +13,10 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path
+from django.urls import include, path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView, TokenBlacklistView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from django_rest_passwordreset.views import ResetPasswordConfirm, ResetPasswordValidateToken
 from .views import (
                     AddLectureView,
                     GetCourseLecturesView,
@@ -24,8 +25,9 @@ from .views import (
                     MassEnrollCourseView,
                     SetStudentAttView,
                     SetTeacherAttView,
+                    test,
+                    MailTestView,
                     UnsetStudentAttView,
-                    test, 
                     genAdmin, 
                     
                     GetTokenView, 
@@ -41,11 +43,12 @@ from .views import (
                     DestroyCourseView, 
                     EnrollCourseView,
                     GetCourseByName, 
-                    GetCoursesAll, 
-                    )
+                    GetCoursesAll
+                )
 
 urlpatterns = [
     path('test', test),
+    path('send_welcome_email', MailTestView.as_view(), name='send_welcome_email'),
     path('genadmin', genAdmin),
     
     # Manage tokens, by requesting one with credentials, refreshing or verifying one. Essentially the login API
@@ -53,6 +56,11 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
+
+    # Password resets
+    path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
+    path('password_reset/confirm', ResetPasswordConfirm.as_view(), name='password_reset_confirm'),
+    path('password_reset/validate_token', ResetPasswordValidateToken.as_view(), name='password_reset_validate_token'),
     
     # All user paths
     path('user/register/', CreateUserView.as_view(), name='user_register'),
