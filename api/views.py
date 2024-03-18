@@ -307,6 +307,15 @@ class GetLectureView(generics.RetrieveAPIView):
         serializer = self.serializer_class(queryset[0])
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+def setAttendence(self, request, attended):
+    if request.user.role != AccountRoles.STUDENT:
+        return Response({"error": f"cannot set the attendence of a non-student"}, status=status.HTTP_200_OK)
+        
+    lecture : CourseLecture = self.get_object()
+    lecture.set_attendence_user(request.user, attended=attended, teacher=False)
+    
+    return Response({"ok": f"successfully set attendence"}, status=status.HTTP_200_OK)
+    
 class SetStudentAttView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
@@ -316,13 +325,19 @@ class SetStudentAttView(generics.GenericAPIView):
     serializer_class = CourseLecture
     
     def post(self, request, *args, **kwargs):
-        if request.user.role != AccountRoles.STUDENT:
-            return Response({"error": f"cannot set the attendence of a non-student"}, status=status.HTTP_200_OK)
-            
-        lecture : CourseLecture = self.get_object()
-        lecture.set_attendence_user(request.user, teacher=False)
+        return setAttendence(self, request, True)
         
-        return Response({"ok": f"successfully set attendence"}, status=status.HTTP_200_OK)
+class UnsetStudentAttView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    lookup_field = 'pk'
+    
+    queryset = CourseLecture.objects.all()
+    serializer_class = CourseLecture
+    
+    def post(self, request, *args, **kwargs):
+        print(request.user)
+        return setAttendence(self, request, False)
     
 class SetTeacherAttView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
@@ -339,9 +354,9 @@ class SetTeacherAttView(generics.GenericAPIView):
         
         queryset = User.objects.all()
         usernames = result.data["usernames"]
-        for username in usernames:
+        for username, attended in usernames.items():
             user = queryset.filter(username=username)[0]
-            lecture.set_attendence_user(user, teacher=True)
+            lecture.set_attendence_user(user, attended=(attended=="true"), teacher=True)
         
         return Response({"ok": f"succesfully set attendence for {len(usernames)} students"}, status=status.HTTP_200_OK)
     
@@ -364,9 +379,9 @@ class GetScheduleView(generics.GenericAPIView):
             lectures = LectureSerializer(lectures_obj, many=True)
             for i, lecture_obj in enumerate(lectures_obj):
                 att = lecture_obj.get_attendence_user(user)
-                lectures.data[i]["course"] = lecture_obj.course.course_name
-                lectures.data[i]["attended_student"] = att.attended_student if att is not None else False
-                lectures.data[i]["attended_teacher"] = att.attended_teacher if att is not None else False
+                lectures.data[i]["course_name"] = lecture_obj.course.course_name
+                lectures.data[i]["attended_student"] = att.attended_student if att is not None else None
+                lectures.data[i]["attended_teacher"] = att.attended_teacher if att is not None else None
             all_lectures += lectures.data
 
         # Sort chronological order
