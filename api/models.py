@@ -68,10 +68,10 @@ class Course(models.Model):
         return str(self.name)
     
     def get_enrolled_students(self):
-        return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.STUDENT)]
+        return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.STUDENT, course=self)]
 
     def get_teachers(self):
-        return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.TEACHER)]
+        return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.TEACHER, course=self)]
 
     def get_lectures(self):
         return CourseLecture.objects.filter(course=self)
