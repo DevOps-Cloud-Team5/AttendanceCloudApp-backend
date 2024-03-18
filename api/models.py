@@ -74,7 +74,10 @@ class Course(models.Model):
         return [uc.user for uc in UserCourse.objects.filter(user__role=AccountRoles.TEACHER)]
 
     def get_lectures(self):
-        return [lecture for lecture in CourseLecture.objects.filter(course=self)]
+        return CourseLecture.objects.filter(course=self)
+
+    def get_lectures_week(self, year : int, week : int):
+        return CourseLecture.objects.filter(course=self, start_time__year=year, start_time__week=week)
 
     def is_user_enrolled(self, user : User):
         return bool(UserCourse.objects.filter(user=user, course=self))
@@ -99,13 +102,13 @@ class CourseLecture(models.Model):
         default=LectureTypes.LECTURE,
     )
 
-    def set_attendence_user(self, student : User, teacher=False):
+    def set_attendence_user(self, student : User, attended : bool, teacher=False):
         queryset = AttendenceAcknowledgement.objects.filter(lecture=self, student=student)
         if not queryset: ack = AttendenceAcknowledgement.objects.create(lecture=self, student=student)
         else: ack = queryset[0]
 
-        if teacher: ack.attended_teacher = True
-        else: ack.attended_student = True
+        if teacher: ack.attended_teacher = attended
+        else: ack.attended_student = attended
         ack.save()
 
     def get_attendence_user(self, student : User):
@@ -117,8 +120,8 @@ class CourseLecture(models.Model):
         return [] if not queryset else queryset[0]
 
 class AttendenceAcknowledgement(models.Model):
-    attended_student = models.BooleanField(default=False)
-    attended_teacher = models.BooleanField(default=False)
+    attended_student = models.BooleanField(default=None, null=True)
+    attended_teacher = models.BooleanField(default=None, null=True)
     student = models.ForeignKey(User, null=False, related_name='user_ack', on_delete=models.CASCADE)
     lecture = models.ForeignKey(CourseLecture, null=False, related_name='lecture_ack', on_delete=models.CASCADE)
 

@@ -27,6 +27,7 @@ from .views import (
                     SetTeacherAttView,
                     test,
                     MailTestView,
+                    UnsetStudentAttView,
                     genAdmin, 
                     
                     GetTokenView, 
@@ -83,10 +84,11 @@ urlpatterns = [
     # path('course/lecture/<pk>/delete', GetCourseByName.as_view(), name='lecture_add'),
 
     path('lecture/<pk>/get', GetLectureView.as_view(), name='lecture_get'),
-    path('lecture/<pk>/student_att', SetStudentAttView.as_view(), name='lecture_att_student'),
+    path('lecture/<pk>/student_set_att', SetStudentAttView.as_view(), name='lecture_set_att_student'),
+    path('lecture/<pk>/student_unset_att', UnsetStudentAttView.as_view(), name='lecture_unset_att_student'),
     path('lecture/<pk>/teacher_att', SetTeacherAttView.as_view(), name='lecture_att_teacher'),
 
-    path('schedule/get', GetScheduleView.as_view(), name='schedule_get'),
+    path('schedule/get/<year>/<week>', GetScheduleView.as_view(), name='schedule_get'),
 
     # Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -123,10 +123,13 @@ class AddLectureSerializer(serializers.Serializer):
         return attrs
     
 class SetAttendenceTeacherSerializer(serializers.Serializer):
-    usernames = serializers.ListField(required=True, allow_empty=False, child=serializers.CharField(max_length=150))
+    usernames = serializers.DictField(required=True, allow_empty=False, child=
+                                        serializers.CharField(max_length=150)
+                                      )
 
-    def validate_attendence(self, username):
+    def validate_attendence(self, username, attended):
         user_query = User.objects.all().filter(username=username)
+        if (attended := attended.lower()) not in ["true", "false"]: raise serializers.ValidationError({"error": f"invalid attendence state: '{attended}'"})
         if not user_query: raise serializers.ValidationError({"error": f"user '{username}' does not exist"})
         if user_query[0].role != AccountRoles.STUDENT: raise serializers.ValidationError({"error": f"cannot set the attendence of a non-student: '{username}' is {user_query[0].role}"})
         
@@ -134,8 +137,9 @@ class SetAttendenceTeacherSerializer(serializers.Serializer):
         if not course.is_user_enrolled(user_query[0]): raise serializers.ValidationError({"error": f"user '{username}' is not enrolled in '{course.course_name}'"})
 
     def validate(self, attrs):
-        for username in attrs["usernames"]: self.validate_enroll(username)
+        for username, attended in attrs["usernames"].items(): self.validate_attendence(username, attended)
         return attrs
     
 class MailTestSerializer(serializers.Serializer):
     email = serializers.CharField(required=True)
+    
