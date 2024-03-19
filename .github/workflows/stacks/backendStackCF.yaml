@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Backend Infrastructure
+Parameters:
+  ProjectName:
+    Type: String
+    Description: The project name to use for resource naming
+  SecretKey:
+    Type: String
+    Description: Application secret key
+  DBUser:
+    Type: String
+    Description: User of DB
+  DBPassword:
+    Type: String
+    Description: Password of DB
+    NoEcho: true
+  EmailHost:
+    Type: String
+    Description: Email host
+  EmailPort:
+    Type: Number
+    Description: Email port
+  EmailUser:
+    Type: String
+    Description: Email username
+  EmailPassword:
+    Type: String
+    Description: Email password
+  FrontendUrl:
+    Type: String
+    Description: Frontend URL for the application
+  
+Resources:
+  RDSDatabase:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: !Sub '${ProjectName}'
+      MasterUsername: !Ref DBUser
+      Engine: postgres
+      MasterUserPassword: !Ref DBPassword
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+  
+  Secrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${ProjectName}-backend-secrets'
+      Description: 'Backend secrets'
+      SecretString: !Sub |
+        {
+          "SECRET_KEY": "${SecretKey}",
+          "DB_NAME": "${RDSDatabase.DBName}",
+          "DB_HOST": "${RDSDatabase.Endpoint.Address}",
+          "DB_USER": "${DBUser}",
+          "DB_PORT": "5432",
+          "DB_PASSWORD": "${DBPassword}",
+          "EMAIL_HOST": "${EmailHost}",
+          "EMAIL_PORT": "${EmailPort}",
+          "EMAIL_USER": "${EmailUser}",
+          "EMAIL_PASSWORD": "${EmailPassword}",
+          "FRONTEND_URL": "${FrontendUrl}"
+        }
+
+  BackendBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${ProjectName}-backend'
+
+  TerraformStateBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${ProjectName}-terraform'
+      VersioningConfiguration:
+        Status: Enabled
+
+  RedirectBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${ProjectName}-redirect'
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: "www.attendunce.click"
+
+  ZappaBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub 'zappa-${ProjectName}'
+      
+Outputs:
+  RDSEndpoint:
+    Description: "The RDS database endpoint"
+    Value: !GetAtt RDSDatabase.Endpoint.Address
