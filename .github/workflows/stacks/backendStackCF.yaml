@@ -13,6 +13,7 @@ Parameters:
   DBPassword:
     Type: String
     Description: Password of DB
+    NoEcho: true
   EmailHost:
     Type: String
     Description: Email host
@@ -27,6 +28,8 @@ Parameters:
     Description: Email password
   FrontendUrl:
     Type: String
+    Description: Frontend URL for the application
+  
 Resources:
   RDSDatabase:
     Type: AWS::RDS::DBInstance
@@ -37,6 +40,7 @@ Resources:
       MasterUserPassword: !Ref DBPassword
       DBInstanceClass: db.t3.micro
       AllocatedStorage: 20
+  
   Secrets:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -47,9 +51,9 @@ Resources:
           "SECRET_KEY": "${SecretKey}",
           "DB_NAME": "${RDSDatabase.DBName}",
           "DB_HOST": "${RDSDatabase.Endpoint.Address}",
-          "DB_USER": "${RDSDatabase.MasterUsername}",
+          "DB_USER": "${DBUser}",
           "DB_PORT": "5432",
-          "DB_PASSWORD": "${RDSDatabase.MasterUserPassword}",
+          "DB_PASSWORD": "${DBPassword}",
           "EMAIL_HOST": "${EmailHost}",
           "EMAIL_PORT": "${EmailPort}",
           "EMAIL_USER": "${EmailUser}",
@@ -81,10 +85,8 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Sub 'zappa-${ProjectName}'
+      
 Outputs:
-  DBPassword:
-    Description: "The RDS database master user password"
-    Value: !Ref MasterUserPassword
   RDSEndpoint:
     Description: "The RDS database endpoint"
     Value: !GetAtt RDSDatabase.Endpoint.Address
