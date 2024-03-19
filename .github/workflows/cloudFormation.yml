@@ -84,15 +84,9 @@ jobs:
         aws cloudformation deploy \
           --template-file ./.github/workflows/stacks/backendStackCF.yaml \
           --stack-name ${{ github.event.inputs.project_name }}-backend \
-          --parameter-overrides ProjectName=${{ github.event.inputs.project_name }} SecretKey=${{ github.event.inputs.secret_key }} DBUser=${{ github.event.inputs.db_user }} DBPassword=${{ github.event.inputs.db_password }} EmailHost=${{ github.event.inputs.email_host }} EmailPort=${{ github.event.inputs.email_port }} EmailUser=${{ github.event.inputs.email_user }} EmailPassword=${{ github.event.inputs.email_password }} FrontendUrl=${{ github.event.inputs.frontend_url }}
+          --parameter-overrides ProjectName=${{ github.event.inputs.project_name }} SecretKey=${{ github.event.inputs.secret_key }} DBUser=${{ github.event.inputs.db_user }} DBPassword=${{ github.event.inputs.db_password }} EmailHost=${{ github.event.inputs.email_host }} EmailPort=${{ github.event.inputs.email_port }} EmailUser=${{ github.event.inputs.email_user }} EmailPassword=${{ github.event.inputs.email_password }} FrontendUrl=${{ github.event.inputs.frontend_url }} \
           --capabilities CAPABILITY_IAM
       continue-on-error: true
-
-    - name: Fetch Stack Events on Failure
-      run: |
-        aws cloudformation describe-stack-events --stack-name ${{ github.event.inputs.project_name }}-backend
-        exit 1
-
 
     - name: Setup up Requirements
       run: |
