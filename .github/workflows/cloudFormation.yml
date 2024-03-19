@@ -98,6 +98,5 @@ jobs:
     - name: Deploy
       run: |
         cd deployments
-        terraform import aws_iam_role.lambda_role lambda_role_zappa_tf
         terraform init
         terraform apply -auto-approve
