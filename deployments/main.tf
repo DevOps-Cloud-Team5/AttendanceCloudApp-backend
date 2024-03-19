@@ -49,7 +49,7 @@ resource "aws_lambda_function" "app" {
 }
 
 resource "aws_api_gateway_rest_api" "api" {
-  name        = "zappa-app-api"
+  name        = "PLACEHOLDER_PROJECT_NAME-zappa-app-api"
   description = "API for zappa tf app"
   binary_media_types = ["*/*"]
 }
