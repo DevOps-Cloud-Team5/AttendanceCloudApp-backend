@@ -278,6 +278,9 @@ class GetCoursesAll(generics.ListAPIView):
             for course_serialized in serializer.data:
                 course : Course = queryset.filter(pk=course_serialized["id"])[0]
                 course_serialized["enrolled"] = course.is_user_enrolled(user=request.user)
+                course_serialized["num_students"] = len(course.get_enrolled_students())
+                course_serialized["num_teachers"] = len(course.get_teachers())
+                
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EnrollCourseView(generics.GenericAPIView):
@@ -288,15 +291,23 @@ class EnrollCourseView(generics.GenericAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     
-    def post(self, request, *args, **kwargs):
-        if request.user.role == AccountRoles.ADMIN: 
+    def post(self, request, username=None, *args, **kwargs):
+        if username is not None:
+            if user.role != AccountRoles.ADMIN: 
+                return Response({"error": f"unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+            queryset = User.objects.all().filter(username=username)
+            if not queryset:
+                return Response({"error": f"{username} is not a valid user"}, status=status.HTTP_400_BAD_REQUEST)
+            user = queryset[0]
+        else:
+            user = request.user
+            username = user.username
+        
+        if user.role == AccountRoles.ADMIN: 
             return Response({"error": f"cannot enroll an admin account into a course"}, status=status.HTTP_400_BAD_REQUEST)
         
         obj : Course = self.get_object()
-        user = request.user
-        username = user.username
-        
-        if obj.is_user_enrolled(request.user):
+        if obj.is_user_enrolled(user):
             return Response({"error": f"{username} is already enrolled in {obj.course_name}"}, status=status.HTTP_400_BAD_REQUEST)
             
         obj.add_user_to_course(user)
@@ -314,12 +325,20 @@ class DisenrollCourseView(generics.GenericAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     
-    def post(self, request, *args, **kwargs):
-        obj : Course = self.get_object()
-        user = request.user
-        username = user.username
+    def post(self, request, username=None, *args, **kwargs):
+        if username is not None:
+            if request.user.role != AccountRoles.ADMIN: 
+                return Response({"error": f"unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+            queryset = User.objects.all().filter(username=username)
+            if not queryset:
+                return Response({"error": f"{username} is not a valid user"}, status=status.HTTP_400_BAD_REQUEST)
+            user = queryset[0]
+        else:
+            user = request.user
+            username = user.username
         
-        if not obj.is_user_enrolled(request.user):
+        obj : Course = self.get_object()
+        if not obj.is_user_enrolled(user):
             return Response({"error": f"{username} is not enrolled in {obj.course_name}"}, status=status.HTTP_400_BAD_REQUEST)
             
         obj.remove_user_from_course(user)
@@ -376,6 +395,8 @@ class AddLectureView(generics.GenericAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     
+    holiday_weeks = [1, 8, 18, 29, 30, 31, 32, 33, 34, 42, 52]
+    
     def post(self, request, *args, **kwargs):
         course : Course = self.get_object()
         result = AddLectureSerializer(data=request.data, context={ "course": course })
@@ -384,10 +405,32 @@ class AddLectureView(generics.GenericAPIView):
         data = result.data
         start_time = datetime.datetime.fromisoformat(data["start_time"])
         end_time = datetime.datetime.fromisoformat(data["end_time"])
-        course.add_lecture_to_course(start_time, end_time, data["lecture_type"])
         
+        if not data["lecture_series"]:
+            course.add_lecture_to_course(start_time, end_time, data["lecture_type"])
+        else:
+            curr_week = start_time.strftime("%W") 
+            exclude_weeks = list(self.holiday_weeks)
+            if curr_week in exclude_weeks: exclude_weeks.remove(curr_week)
+            
+            start_string = start_time.strftime("%Y %a %H %M %S ") 
+            end_string = end_time.strftime("%Y %a %H %M %S ") 
+            for i in range(1, 53):
+                if i in exclude_weeks: continue
+                new_start = datetime.datetime.strptime(start_string + str(i), "%Y %a %H %M %S %W")
+                new_end = datetime.datetime.strptime(end_string + str(i), "%Y %a %H %M %S %W")
+                course.add_lecture_to_course(new_start, new_end, data["lecture_type"])
+                
         return Response({"ok": f"successfully created lecture"}, status=status.HTTP_200_OK)
+
+class DestroyLectureView(generics.DestroyAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    lookup_field = 'pk'
     
+    queryset = CourseLecture.objects.all()
+    serializer_class = LectureSerializer
+
 class GetLectureView(generics.RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
@@ -431,7 +474,6 @@ class UnsetStudentAttView(generics.GenericAPIView):
     serializer_class = CourseLecture
     
     def post(self, request, *args, **kwargs):
-        print(request.user)
         return setAttendence(self, request, False)
     
 class SetTeacherAttView(generics.GenericAPIView):
@@ -460,14 +502,22 @@ class GetScheduleView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
-    def get(self, request, year, week):
+    def get(self, request, year, week, course_id=None):
         if not year.isdigit() or int(year) < 1970:
             return Response({"error": f"invalid year parameter"}, status=status.HTTP_400_BAD_REQUEST)
         if not week.isdigit() or int(week) < 0 or int(week) > 52:
             return Response({"error": f"invalid week parameter"}, status=status.HTTP_400_BAD_REQUEST)
             
         user = User.objects.all().filter(username=request.user.username)[0]
-        courses : List[Course] = user.get_enrolled_courses()
+        
+        if course_id is None:
+            courses : List[Course] = user.get_enrolled_courses()
+        else: 
+            queryset = Course.objects.all().filter(pk=course_id)
+            if not queryset:
+                return Response({"error": f"course ID is not valid"}, status=status.HTTP_400_BAD_REQUEST)
+            courses : List[Course] = [queryset[0]]
+        
         all_lectures = []
         for course in courses: 
             lectures_obj = course.get_lectures_week(int(year), int(week))

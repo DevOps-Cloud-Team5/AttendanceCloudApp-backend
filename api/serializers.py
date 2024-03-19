@@ -104,6 +104,7 @@ class AddLectureSerializer(serializers.Serializer):
     start_time = serializers.DateTimeField(required=True)
     end_time = serializers.DateTimeField(required=True)
     lecture_type = serializers.CharField(required=True)
+    lecture_series = serializers.BooleanField(default=False)
 
     def validate(self, attrs):
         start_time, end_time = attrs["start_time"], attrs["end_time"]
