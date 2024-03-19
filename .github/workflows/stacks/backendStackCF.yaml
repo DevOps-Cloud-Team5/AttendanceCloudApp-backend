@@ -7,27 +7,36 @@ Parameters:
   SecretKey:
     Type: String
     Description: Application secret key
+  DBUser:
+    Type: String
+    Description: User of DB
+  DBPassword:
+    Type: String
+    Description: Password of DB
   EmailHost:
     Type: String
+    Description: Email host
   EmailPort:
     Type: Number
+    Description: Email port
   EmailUser:
     Type: String
+    Description: Email username
   EmailPassword:
     Type: String
+    Description: Email password
   FrontendUrl:
     Type: String
 Resources:
   RDSDatabase:
     Type: AWS::RDS::DBInstance
     Properties:
-      # Specify other properties as required for your use case
       DBName: !Sub '${ProjectName}-db'
-      MasterUsername: admin
-      Engine: postgres # Example, adjust based on your requirements
-      MasterUserPassword: !Ref DBPassword # This parameter will be auto-generated; see Outputs below
-      DBInstanceClass: db.t3.micro # Example, adjust based on your requirements
-      AllocatedStorage: 20 # Example, adjust based on your requirements
+      MasterUsername: !Ref DBUser
+      Engine: postgres
+      MasterUserPassword: !Ref DBPassword
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
   Secrets:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -39,7 +48,7 @@ Resources:
           "DB_NAME": "${RDSDatabase.DBName}",
           "DB_HOST": "${RDSDatabase.Endpoint.Address}",
           "DB_USER": "${RDSDatabase.MasterUsername}",
-          "DB_PORT": "5432", # Example, adjust based on your RDS engine
+          "DB_PORT": "5432",
           "DB_PASSWORD": "${RDSDatabase.MasterUserPassword}",
           "EMAIL_HOST": "${EmailHost}",
           "EMAIL_PORT": "${EmailPort}",
@@ -66,7 +75,7 @@ Resources:
       BucketName: !Sub '${ProjectName}-redirect'
       WebsiteConfiguration:
         RedirectAllRequestsTo:
-          HostName: "www.example.com"
+          HostName: "www.attendunce.click"
 
   ZappaBucket:
     Type: 'AWS::S3::Bucket'
