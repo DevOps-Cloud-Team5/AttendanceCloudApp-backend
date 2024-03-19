@@ -472,6 +472,7 @@ class GetFullLectureView(generics.RetrieveAPIView):
             data = {
                 "first_name": student.first_name,
                 "last_name": student.last_name,
+                "username": student.username,
                 "attended": attended
             }      
             response["students"].append(data)
