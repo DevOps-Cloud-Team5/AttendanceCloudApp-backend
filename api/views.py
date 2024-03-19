@@ -460,14 +460,22 @@ class GetScheduleView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
-    def get(self, request, year, week):
+    def get(self, request, year, week, course_id=None):
         if not year.isdigit() or int(year) < 1970:
             return Response({"error": f"invalid year parameter"}, status=status.HTTP_400_BAD_REQUEST)
         if not week.isdigit() or int(week) < 0 or int(week) > 52:
             return Response({"error": f"invalid week parameter"}, status=status.HTTP_400_BAD_REQUEST)
             
         user = User.objects.all().filter(username=request.user.username)[0]
-        courses : List[Course] = user.get_enrolled_courses()
+        
+        if course_id is None:
+            courses : List[Course] = user.get_enrolled_courses()
+        else: 
+            queryset = Course.objects.all().filter(pk=course_id)
+            if not queryset:
+                return Response({"error": f"course ID is not valid"}, status=status.HTTP_400_BAD_REQUEST)
+            courses : List[Course] = [queryset[0]]
+        
         all_lectures = []
         for course in courses: 
             lectures_obj = course.get_lectures_week(int(year), int(week))

@@ -93,6 +93,7 @@ urlpatterns = [
     path('lecture/<pk>/teacher_att', SetTeacherAttView.as_view(), name='lecture_att_teacher'),
 
     path('schedule/get/<year>/<week>', GetScheduleView.as_view(), name='schedule_get'),
+    path('schedule/get/<year>/<week>/<course_id>', GetScheduleView.as_view(), name='schedule_get'),
 
     # Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
