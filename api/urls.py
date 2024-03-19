@@ -19,6 +19,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django_rest_passwordreset.views import ResetPasswordConfirm, ResetPasswordValidateToken
 from .views import (
                     AddLectureView,
+                    DestroyLectureView,
                     DisenrollCourseView,
                     GetCourseLecturesView,
                     GetFullCoursePage,
@@ -76,7 +77,9 @@ urlpatterns = [
     path('course/update/<pk>', UpdateCourseView.as_view(), name='course_update'),
     path('course/delete/<pk>', DestroyCourseView.as_view(), name='course_delete'),
     path('course/enroll/<pk>', EnrollCourseView.as_view(), name='course_enroll'),
-    path('course/disenroll/<pk>', DisenrollCourseView.as_view(), name='course_enroll'),
+    path('course/enroll/<pk>/<username>', EnrollCourseView.as_view(), name='course_enroll_username'),
+    path('course/disenroll/<pk>', DisenrollCourseView.as_view(), name='course_disenroll'),
+    path('course/disenroll/<pk>/<username>', DisenrollCourseView.as_view(), name='course_disenroll_username'),
     path('course/mass_enroll/<pk>', MassEnrollCourseView.as_view(), name='course_mass_enroll'),
     path('course/get/<pk>', GetFullCoursePage.as_view(), name='course_get'),
     path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),
@@ -84,8 +87,8 @@ urlpatterns = [
     
     path('course/lecture/<pk>/get', GetCourseLecturesView.as_view(), name='course_get_lecture'),
     path('course/lecture/<pk>/add', AddLectureView.as_view(), name='course_add_lecture'),
+    path('course/lecture/<pk>/delete', DestroyLectureView.as_view(), name='course_lecture_delete'),
     # path('course/lecture/<pk>/update', GetCourseByName.as_view(), name='lecture_add'), # TODO
-    # path('course/lecture/<pk>/delete', GetCourseByName.as_view(), name='lecture_add'),
 
     path('lecture/<pk>/get', GetLectureView.as_view(), name='lecture_get'),
     path('lecture/<pk>/student_set_att', SetStudentAttView.as_view(), name='lecture_set_att_student'),
