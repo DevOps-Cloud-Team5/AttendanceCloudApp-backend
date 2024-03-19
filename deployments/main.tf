@@ -6,15 +6,15 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "attendunce-terraform"
+    bucket = "PLACEHOLDER_PROJECT_NAME-terraform"
     key    = "terraform.tfstate"
-    region = "eu-central-1"
+    region = "PLACEHOLDER_REGION"
     acl = "bucket-owner-full-control"
   }
 }
 
 provider "aws" {
-  region = "eu-central-1"
+  region = "PLACEHOLDER_REGION"
 }
 
 resource "aws_iam_role" "lambda_role" {
@@ -37,7 +37,7 @@ EOF
 }
 
 resource "aws_lambda_function" "app" {
-  function_name = "attendunce-tf"
+  function_name = "PLACEHOLDER_PROJECT_NAME-tf"
   handler       = "handler.lambda_handler"
   runtime       = "python3.10"
   timeout       = 30
@@ -151,10 +151,10 @@ EOF
 }
 
 resource "aws_s3_bucket_website_configuration" "redirect_bucket" {
-  bucket = "attendunce-redirect"
+  bucket = "PLACEHOLDER_PROJECT_NAME-redirect"
 
   redirect_all_requests_to {
-    host_name = "${aws_api_gateway_rest_api.api.id}.execute-api.eu-central-1.amazonaws.com"
+    host_name = "${aws_api_gateway_rest_api.api.id}.execute-api.PLACEHOLDER_REGION.amazonaws.com"
     protocol = "https"
   }
 }
@@ -165,6 +165,6 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_logs_attachment" {
 }
 
 output "api_url" {
-  value       = "https://${aws_api_gateway_rest_api.api.id}.execute-api.eu-central-1.amazonaws.com/${aws_api_gateway_deployment.deployment.stage_name}"
+  value       = "https://${aws_api_gateway_rest_api.api.id}.execute-api.PLACEHOLDER_REGION.amazonaws.com/${aws_api_gateway_deployment.deployment.stage_name}"
   description = "The URL of the API endpoint"
 }

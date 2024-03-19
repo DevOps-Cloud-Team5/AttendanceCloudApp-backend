@@ -1,0 +1,86 @@
+name: Create AWS Services and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Project Name'
+        required: true
+      secret_key:
+        description: 'Secret Key'
+        required: true
+      email_host:
+        description: 'Email Host'
+        required: true
+      email_port:
+        description: 'Email Port'
+        required: true
+      email_user:
+        description: 'Email User'
+        required: true
+      email_password:
+        description: 'Email Password'
+        required: true
+      frontend_url:
+        description: 'Frontend URL'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.10.8
+
+    - name: Set up virtual environment
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+
+    - name: Install dependencies
+      run: |
+        source venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Prepare Zappa and Terraform Configurations
+      run: |
+        sed -i "s/PLACEHOLDER_REGION/${{ secrets.AWS_REGION }}/g" zappa_settings.json
+        sed -i "s/zappa-PLACEHOLDER_PROJECT_NAME/zappa-${{ github.event.inputs.project_name }}/g" zappa_settings.json
+        sed -i "s/PLACEHOLDER_REGION/${{ secrets.AWS_REGION }}/g" ./deployments/main.tf
+        sed -i "s/zappa-PLACEHOLDER_PROJECT_NAME/zappa-${{ github.event.inputs.project_name }}/g" ./deployments/main.tf
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+
+    - name: Deploy CloudFormation Stack
+      run: |
+        aws cloudformation deploy \
+          --template-file ./.github/workflows/stacks/backendStackCF.yaml \
+          --stack-name ${{ github.event.inputs.project_name }}-backend \
+          --parameter-overrides ProjectName=${{ github.event.inputs.project_name }} SecretKey=${{ github.event.inputs.secret_key }} EmailHost=${{ github.event.inputs.email_host }} EmailPort=${{ github.event.inputs.email_port }} EmailUser=${{ github.event.inputs.email_user }} EmailPassword=${{ github.event.inputs.email_password }} FrontendUrl=${{ github.event.inputs.frontend_url }}
+          --capabilities CAPABILITY_IAM
+
+    - name: Setup up Requirements
+      run: |
+        source venv/bin/activate
+        chmod +x ./getEnv.sh && ./getEnv.sh
+        python load_env.py
+        zappa package prod -o package.zip
+
+    - name: Deploy
+      run: |
+        cd deployments
+        terraform init
+        terraform apply -auto-approve
