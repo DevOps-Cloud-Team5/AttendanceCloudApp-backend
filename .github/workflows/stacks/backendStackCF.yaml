@@ -7,14 +7,24 @@ Parameters:
   SecretKey:
     Type: String
     Description: Application secret key
+  DBUser:
+    Type: String
+    Description: User of DB
+  DBPassword:
+    Type: String
+    Description: Password of DB
   EmailHost:
     Type: String
+    Description: Email host
   EmailPort:
     Type: Number
+    Description: Email port
   EmailUser:
     Type: String
+    Description: Email username
   EmailPassword:
     Type: String
+    Description: Email password
   FrontendUrl:
     Type: String
 Resources:
@@ -39,7 +49,7 @@ Resources:
           "DB_NAME": "${RDSDatabase.DBName}",
           "DB_HOST": "${RDSDatabase.Endpoint.Address}",
           "DB_USER": "${RDSDatabase.MasterUsername}",
-          "DB_PORT": "5432", # Example, adjust based on your RDS engine
+          "DB_PORT": "5432",
           "DB_PASSWORD": "${RDSDatabase.MasterUserPassword}",
           "EMAIL_HOST": "${EmailHost}",
           "EMAIL_PORT": "${EmailPort}",

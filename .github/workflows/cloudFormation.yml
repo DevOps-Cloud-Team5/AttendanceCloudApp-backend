@@ -6,6 +6,12 @@ on:
       project_name:
         description: 'Project Name'
         required: true
+      db_user:
+        description: 'User of DB'
+        required: true
+      db_password:
+        description: 'Password of DB'
+        required: true
       secret_key:
         description: 'Secret Key'
         required: true
@@ -69,7 +75,7 @@ jobs:
         aws cloudformation deploy \
           --template-file ./.github/workflows/stacks/backendStackCF.yaml \
           --stack-name ${{ github.event.inputs.project_name }}-backend \
-          --parameter-overrides ProjectName=${{ github.event.inputs.project_name }} SecretKey=${{ github.event.inputs.secret_key }} EmailHost=${{ github.event.inputs.email_host }} EmailPort=${{ github.event.inputs.email_port }} EmailUser=${{ github.event.inputs.email_user }} EmailPassword=${{ github.event.inputs.email_password }} FrontendUrl=${{ github.event.inputs.frontend_url }}
+          --parameter-overrides ProjectName=${{ github.event.inputs.project_name }} SecretKey=${{ github.event.inputs.secret_key }} DBUser=${{ db_user }} DBPassword=${{ db_password }} EmailHost=${{ github.event.inputs.email_host }} EmailPort=${{ github.event.inputs.email_port }} EmailUser=${{ github.event.inputs.email_user }} EmailPassword=${{ github.event.inputs.email_password }} FrontendUrl=${{ github.event.inputs.frontend_url }}
           --capabilities CAPABILITY_IAM
 
     - name: Setup up Requirements
