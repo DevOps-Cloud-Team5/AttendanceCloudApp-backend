@@ -27,7 +27,7 @@ DATABASES = {
 TEMPLATES = [
 	{
 		'BACKEND': 'django.template.backends.django.DjangoTemplates',
-		'DIRS': [],
+		'DIRS': [os.path.join(BASE_DIR, 'api', 'templates')],
 		'APP_DIRS': True,
 		'OPTIONS': {
 			'context_processors': [
@@ -81,8 +81,9 @@ INSTALLED_APPS = [
 	'django.contrib.staticfiles',
 	'corsheaders',
 	'rest_framework',
-    'drf_spectacular',
+    'django_rest_passwordreset',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
  	"api.apps.ApiConfig"
 ]
 
@@ -91,6 +92,15 @@ AUTH_USER_MODEL = "api.User"
 WSGI_APPLICATION = 'api.wsgi.application'
 
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT')
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_PASSWORD')
+
+FRONTEND_URL = config('FRONTEND_URL')
 
 CORS_ALLOW_HEADERS = [
 	'x-requested-with',
@@ -141,4 +151,19 @@ SIMPLE_JWT = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'AUTH_HEADER_TYPES': ('JWT',),
+}
+
+DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
+    "CLASS": "django_rest_passwordreset.tokens.RandomStringTokenGenerator",
+    "OPTIONS": {
+        "min_length": 20,
+        "max_length": 30
+    }
+}
+DJANGO_REST_MULTITOKENAUTH_RESET_TOKEN_EXPIRY_TIME = 30  # minutes
+
+DJANGO_REST_PASSWORDRESET_EMAIL_TEMPLATES = {
+    'subject': 'templates/email/password_reset_subject.txt',
+    'plain_body': 'templates/email/password_reset_email.html',
+    'html_body': 'templates/email/password_reset_email.html',
 }
