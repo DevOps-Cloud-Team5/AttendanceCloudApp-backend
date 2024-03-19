@@ -17,7 +17,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 from .permissions import IsTeacher, IsAdmin, IsStudent
 from .models import Course, AccountRoles, CourseLecture
 
-from .serializers import AddLectureSerializer, CourseUserSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
+from .serializers import AddLectureSerializer, CourseUserSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MailTestSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
 
 
@@ -242,6 +242,7 @@ class GetFullCoursePage(generics.RetrieveAPIView):
         if not queryset:
             return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
         
+        user = User.objects.all().filter(username=request.user.username)[0]
         course : Course = queryset[0]
         teachers = course.get_teachers()
         students = course.get_enrolled_students()
@@ -251,11 +252,11 @@ class GetFullCoursePage(generics.RetrieveAPIView):
         response_data["course_name"] = course.course_name
         response_data["num_teachers"] = len(teachers)
         response_data["num_students"] = len(students)
+        response_data["enrolled"] = course.is_user_enrolled(user=user)
         response_data["attended"] = -1
         response_data["missed"] = -1
         response_data["users"] = CourseUserSerializer((teachers + students), many=True).data
     
-        user = User.objects.all().filter(username=request.user.username)[0]
         if user.role == AccountRoles.STUDENT: 
             response_data |= self.get_attendence_stats(course, user)
         
@@ -304,6 +305,29 @@ class EnrollCourseView(generics.GenericAPIView):
             obj._prefetched_objects_cache = {}
             
         return Response({"ok": f"succesfully enrolled {username} in {obj.course_name}"}, status=status.HTTP_200_OK)
+
+class DisenrollCourseView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStudent]
+    lookup_field = 'pk'
+    
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    
+    def post(self, request, *args, **kwargs):
+        obj : Course = self.get_object()
+        user = request.user
+        username = user.username
+        
+        if not obj.is_user_enrolled(request.user):
+            return Response({"error": f"{username} is not enrolled in {obj.course_name}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        obj.remove_user_from_course(user)
+
+        if getattr(obj, '_prefetched_objects_cache', None):
+            obj._prefetched_objects_cache = {}
+            
+        return Response({"ok": f"succesfully disenrolled {username} from {obj.course_name}"}, status=status.HTTP_200_OK)
 
 class MassEnrollCourseView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]

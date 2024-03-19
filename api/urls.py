@@ -19,6 +19,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django_rest_passwordreset.views import ResetPasswordConfirm, ResetPasswordValidateToken
 from .views import (
                     AddLectureView,
+                    DisenrollCourseView,
                     GetCourseLecturesView,
                     GetFullCoursePage,
                     GetLectureView,
@@ -75,6 +76,7 @@ urlpatterns = [
     path('course/update/<pk>', UpdateCourseView.as_view(), name='course_update'),
     path('course/delete/<pk>', DestroyCourseView.as_view(), name='course_delete'),
     path('course/enroll/<pk>', EnrollCourseView.as_view(), name='course_enroll'),
+    path('course/disenroll/<pk>', DisenrollCourseView.as_view(), name='course_enroll'),
     path('course/mass_enroll/<pk>', MassEnrollCourseView.as_view(), name='course_mass_enroll'),
     path('course/get/<pk>', GetFullCoursePage.as_view(), name='course_get'),
     path('course/getall/', GetCoursesAll.as_view(), name='course_getall'),

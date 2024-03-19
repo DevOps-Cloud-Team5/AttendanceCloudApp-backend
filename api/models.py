@@ -82,6 +82,11 @@ class Course(models.Model):
     def is_user_enrolled(self, user : User):
         return bool(UserCourse.objects.filter(user=user, course=self))
 
+    def remove_user_from_course(self, user : User):
+        queryset = UserCourse.objects.filter(user=user, course=self)
+        if not queryset: return
+        queryset[0].delete()
+
     def add_user_to_course(self, user: User):
         UserCourse.objects.create(user=user, course=self).save()
 
