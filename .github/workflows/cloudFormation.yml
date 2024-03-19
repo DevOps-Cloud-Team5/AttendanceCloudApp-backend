@@ -80,7 +80,6 @@ jobs:
       continue-on-error: true
 
     - name: Fetch Stack Events on Failure
-      if: failure() && steps.deploy_stack.outcome == 'failure'
       run: |
         aws cloudformation describe-stack-events --stack-name ${{ github.event.inputs.project_name }}-backend
         exit 1
