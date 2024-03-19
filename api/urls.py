@@ -23,6 +23,7 @@ from .views import (
                     DisenrollCourseView,
                     GetCourseLecturesView,
                     GetFullCoursePage,
+                    GetFullLectureView,
                     GetLectureView,
                     GetScheduleView,
                     MassEnrollCourseView,
@@ -91,6 +92,7 @@ urlpatterns = [
     # path('course/lecture/<pk>/update', GetCourseByName.as_view(), name='lecture_add'), # TODO
 
     path('lecture/<pk>/get', GetLectureView.as_view(), name='lecture_get'),
+    path('lecture/<pk>/get_teacher_att', GetFullLectureView.as_view(), name='lecture_get_teacher_att'),
     path('lecture/<pk>/student_set_att', SetStudentAttView.as_view(), name='lecture_set_att_student'),
     path('lecture/<pk>/student_unset_att', UnsetStudentAttView.as_view(), name='lecture_unset_att_student'),
     path('lecture/<pk>/teacher_att', SetTeacherAttView.as_view(), name='lecture_att_teacher'),
