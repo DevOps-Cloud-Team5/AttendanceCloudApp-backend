@@ -34,7 +34,7 @@ Resources:
   RDSDatabase:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBName: !Sub '${ProjectName}-db'
+      DBName: !Sub '${ProjectName}'
       MasterUsername: !Ref DBUser
       Engine: postgres
       MasterUserPassword: !Ref DBPassword
