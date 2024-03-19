@@ -5,6 +5,6 @@
         "s3_bucket": "zappa-PLACEHOLDER_PROJECT_NAME",
         "django_settings": "api.settings",
         "project_name": "api",
-        "runtime": "python3.10",
+        "runtime": "python3.10"
     }
 }
