@@ -50,6 +50,28 @@ def test(request):
     return Response({"ping": "pong"}, 200)
 
 @extend_schema(
+    methods=['GET'],  # Specify methods if @api_view is not used, otherwise redundant
+    summary="Ping Pong 2",
+    description="Returns a simple ping to a pong2 response.",
+    responses={
+        status.HTTP_200_OK: OpenApiResponse(description="Success - Returns a ping pong2 response."),
+        # Add more status codes as needed
+    }
+)
+@api_view(['GET'])
+def test2(request):
+    """
+    A simple API endpoint that responds with a 'pong2' to a 'ping' request.
+    
+    Args:
+        request (Request): The request object.
+    
+    Returns:
+        Response: A JSON response containing {"ping": "pong2"}.
+    """
+    return Response({"ping": "pong2"}, 200)
+
+@extend_schema(
     summary="Send Test Email",
     description="Tries to send a test email.",
     responses={
