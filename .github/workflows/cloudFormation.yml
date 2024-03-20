@@ -91,11 +91,9 @@ jobs:
       
     - name: Run DB migrations
       run: |
-        chmod +x ./getEnv.sh && ./getEnv.sh
         source venv/bin/activate
+        chmod +x ./getEnv.sh && ./getEnv.sh
         python manage.py migrate
-      env:
-        DJANGO_SETTINGS_MODULE: api.settings
 
     - name: Setup up Requirements
       run: |
