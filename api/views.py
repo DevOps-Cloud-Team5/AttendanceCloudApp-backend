@@ -534,3 +534,27 @@ class GetScheduleView(generics.GenericAPIView):
 
         return Response(all_lectures, status=status.HTTP_200_OK)
     
+# @api_view(['GET'])
+# def get_presigned_url(request):
+#     s3_client = boto3.client('s3',
+#                              aws_access_key_id = '',
+#                              aws_secret_access_key='YOUR_AWS_SECRET_ACCESS_KEY',
+#                              region_name='YOUR_AWS_REGION')
+
+#     file_name = request.GET.get('file_name')
+#     file_type = request.GET.get('file_type')
+
+#     try:
+#         presigned_post = s3_client.generate_presigned_post(
+#             Bucket='YOUR_S3_BUCKET_NAME',
+#             Key=file_name,
+#             Fields={"acl": "public-read", "Content-Type": file_type},
+#             Conditions=[
+#               {"acl": "public-read"},
+#               {"Content-Type": file_type}
+#             ],
+#             ExpiresIn=3600
+#         )
+#         return JsonResponse(presigned_post)
+#     except NoCredentialsError:
+#         return Response({"error": "Credentials are missing"}, status=403)
