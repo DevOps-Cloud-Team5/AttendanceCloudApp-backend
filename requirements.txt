@@ -10,6 +10,7 @@ charset-normalizer==3.3.2
 click==8.1.7
 Django==5.0.2
 django-cors-headers==4.3.1
+django-extensions==3.2.3
 django-livereload==1.7
 django-rest-passwordreset==1.4.0
 djangorestframework==3.14.0
