@@ -30,6 +30,7 @@ from .views import (
                     SetStudentAttView,
                     SetTeacherAttView,
                     test,
+                    test2,
                     MailTestView,
                     UnsetStudentAttView,
                     genAdmin, 
@@ -52,6 +53,7 @@ from .views import (
 
 urlpatterns = [
     path('test', test),
+    path('test2', test2),
     path('send_welcome_email', MailTestView.as_view(), name='send_welcome_email'),
     path('genadmin', genAdmin),
     
