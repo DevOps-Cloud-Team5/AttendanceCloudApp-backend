@@ -92,6 +92,7 @@ jobs:
     - name: Run DB migrations
       run: |
         chmod +x ./getEnv.sh && ./getEnv.sh
+        source venv/bin/activate
         python manage.py migrate
       env:
         DJANGO_SETTINGS_MODULE: api.settings
