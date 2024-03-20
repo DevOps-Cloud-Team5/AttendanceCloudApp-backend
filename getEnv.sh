@@ -1,4 +1,4 @@
-SECRET_NAME="attendunce"
+SECRET_NAME="PLACEHOLDER_PROJECT_NAME"
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 
 SECRETS=$(aws secretsmanager get-secret-value --secret-id $SECRET_NAME --query SecretString --output text)
