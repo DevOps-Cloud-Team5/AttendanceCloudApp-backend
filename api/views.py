@@ -15,7 +15,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
-from .models import Course, AccountRoles, CourseLecture
+from .models import AttendenceAcknowledgement, Course, AccountRoles, CourseLecture
 
 from .serializers import AddLectureSerializer, CourseUserSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MailTestSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
@@ -441,9 +441,43 @@ class GetLectureView(generics.RetrieveAPIView):
     def get(self, _, pk):
         queryset = self.get_queryset().filter(pk=pk)
         if not queryset:
-            return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"lecture id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset[0])
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class GetFullLectureView(generics.RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    
+    queryset = CourseLecture.objects.all()
+    serializer_class = LectureSerializer
+
+    def get(self, _, pk):
+        queryset = self.get_queryset().filter(pk=pk)
+        if not queryset:
+            return Response({"error": f"lecture id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        lecture : CourseLecture = queryset[0]
+        course : Course = lecture.course
+        
+        serializer = self.serializer_class(lecture)
+        response = dict(serializer.data)
+        response["course_name"] = course.course_name
+        response["students"] = []
+        
+        students = course.get_enrolled_students()
+        for student in students:
+            att : AttendenceAcknowledgement = lecture.get_attendence_user(student)
+            attended = att.attended_teacher if att is not None else None
+            data = {
+                "first_name": student.first_name,
+                "last_name": student.last_name,
+                "username": student.username,
+                "attended": attended
+            }      
+            response["students"].append(data)
+        
+        return Response(response, status=status.HTTP_200_OK)
     
 def setAttendence(self, request, attended):
     if request.user.role != AccountRoles.STUDENT:
