@@ -35,6 +35,14 @@ jobs:
         sed -i "s/zappa-PLACEHOLDER_PROJECT_NAME/zappa-${{ secrets.PROJECT_NAME }}/g" zappa_settings.json
         sed -i "s/PLACEHOLDER_REGION/${{ secrets.AWS_REGION }}/g" ./deployments/main.tf
         sed -i "s/PLACEHOLDER_PROJECT_NAME/${{ secrets.PROJECT_NAME }}/g" ./deployments/main.tf
+        sed -i "s/PLACEHOLDER_PROJECT_NAME/${{ secrets.PROJECT_NAME }}/g" ./getEnv.sh
+
+    - name: Run DB migrations
+      run: |
+        chmod +x ./getEnv.sh && ./getEnv.sh
+        python manage.py migrate
+      env:
+        DJANGO_SETTINGS_MODULE: api.settings
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
