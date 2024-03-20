@@ -41,9 +41,7 @@ jobs:
       run: |
         source venv/bin/activate
         chmod +x ./getEnv.sh && ./getEnv.sh
-        ls -la
-        cat .env | grep "DB_HOST"
-        python load_env.py
+        PYTHONPATH=$PWD
         python manage.py migrate
 
     - name: Configure AWS credentials
