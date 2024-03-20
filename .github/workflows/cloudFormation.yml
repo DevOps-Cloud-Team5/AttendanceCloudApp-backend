@@ -70,6 +70,7 @@ jobs:
         sed -i "s/zappa-PLACEHOLDER_PROJECT_NAME/zappa-${{ github.event.inputs.project_name }}/g" zappa_settings.json
         sed -i "s/PLACEHOLDER_REGION/${{ secrets.AWS_REGION }}/g" ./deployments/main.tf
         sed -i "s/PLACEHOLDER_PROJECT_NAME/${{ github.event.inputs.project_name }}/g" ./deployments/main.tf
+        sed -i "s/PLACEHOLDER_PROJECT_NAME/${{ github.event.inputs.project_name }}/g" ./getEnv.sh
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -87,6 +88,18 @@ jobs:
           --parameter-overrides ProjectName=${{ github.event.inputs.project_name }} SecretKey=${{ github.event.inputs.secret_key }} DBUser=${{ github.event.inputs.db_user }} DBPassword=${{ github.event.inputs.db_password }} EmailHost=${{ github.event.inputs.email_host }} EmailPort=${{ github.event.inputs.email_port }} EmailUser=${{ github.event.inputs.email_user }} EmailPassword=${{ github.event.inputs.email_password }} FrontendUrl=${{ github.event.inputs.frontend_url }} \
           --capabilities CAPABILITY_IAM
       continue-on-error: true
+      
+    - name: Run DB migrations
+      run: |
+        source venv/bin/activate
+        chmod +x ./getEnv.sh && ./getEnv.sh
+        python manage.py migrate
+
+    - name: Run API Tests
+      run: |
+        source venv/bin/activate
+        chmod +x ./getEnv.sh && ./getEnv.sh
+        chmod +x ./test_backend.sh && ./test_backend.sh
 
     - name: Setup up Requirements
       run: |
@@ -98,6 +111,5 @@ jobs:
     - name: Deploy
       run: |
         cd deployments
-        terraform import aws_iam_role.lambda_role lambda_role_zappa_tf
         terraform init
         terraform apply -auto-approve

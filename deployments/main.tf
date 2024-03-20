@@ -18,7 +18,7 @@ provider "aws" {
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name = "lambda_role_zappa_tf"
+  name = "PLACEHOLDER_PROJECT_NAME_lambda_role_zappa_tf"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -130,7 +130,7 @@ resource "aws_lambda_permission" "apigw" {
 }
 
 resource "aws_iam_policy" "cloudwatch_logs" {
-  name        = "LambdaCloudWatchLogsPolicy_zappa"
+  name        = "PLACEHOLDER_PROJECT_NAME_LambdaCloudWatchLogsPolicy_zappa"
   description = "Allows Lambda function to write logs to CloudWatch Logs"
   policy      = <<EOF
 {

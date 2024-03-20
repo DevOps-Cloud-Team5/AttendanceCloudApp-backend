@@ -15,7 +15,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
-from .models import Course, AccountRoles, CourseLecture
+from .models import AttendenceAcknowledgement, Course, AccountRoles, CourseLecture
 
 from .serializers import AddLectureSerializer, CourseUserSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MailTestSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
@@ -38,6 +38,15 @@ __ROOT__ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 @api_view(['GET'])
 def test(request):
+    """
+    A simple API endpoint that responds with a 'pong' to a 'ping' request.
+    
+    Args:
+        request (Request): The request object.
+    
+    Returns:
+        Response: A JSON response containing {"ping": "pong"}.
+    """
     return Response({"ping": "pong"}, 200)
 
 @extend_schema(
@@ -50,9 +59,22 @@ def test(request):
     }
 )
 class MailTestView(generics.CreateAPIView):
+    """
+    API endpoint that attempts to send a test email to the provided email address.
+    Utilizes the MailTestSerializer for input validation.
+    """
     serializer_class = MailTestSerializer
 
     def post(self, request, *args, **kwargs):
+        """
+        Sends a test email to the specified address.
+
+        Args:
+            request (Request): The request object, containing the 'email' field.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of the email sending operation.
+        """
         subject = 'Welcome to My Site'
         message = 'Thank you for creating an account!'
         from_email = 'admin@mysite.com'
@@ -71,6 +93,16 @@ class MailTestView(generics.CreateAPIView):
 # Dangerous endpoint which should be turned off in production but can be used to setup the DB
 # Ideally a better method should be used to create the first admin account, but useful for debugging
 def genAdmin(request):
+    """
+    Generates an admin account if no admin accounts exist. This is a debug function and
+    should be disabled in production environments.
+
+    Args:
+        request (HttpRequest): The request object.
+
+    Returns:
+        JsonResponse: A JSON response indicating the success or failure of the admin account creation.
+    """
     queryset = User.objects.all()
     # pdb.set_trace()
     admins = UserSerializer(queryset.filter(role= AccountRoles.ADMIN), many=True)
@@ -89,6 +121,10 @@ def genAdmin(request):
 
 # Acts as the "login" API, provide username and password to get the access and refresh token
 class GetTokenView(TokenObtainPairView):
+    """
+    API endpoint for obtaining JWT authentication tokens (access and refresh tokens).
+    Utilizes CustomTokenSerializer for token generation.
+    """
     serializer_class = CustomTokenSerializer
 
 '''
@@ -110,6 +146,9 @@ All GET requests should have authentication level of IsStudent
 
 # The register API, requires the fields outlined in the RegisterSerializer
 class CreateUserView(generics.CreateAPIView):
+    """
+    API endpoint for creating a new user account. Requires admin privileges.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdmin]
     
@@ -117,6 +156,9 @@ class CreateUserView(generics.CreateAPIView):
     serializer_class = CreateUserSerializer
 
 class UpdateUserView(generics.UpdateAPIView):
+    """
+    API endpoint for updating user details. Requires the user itself or an admin to perform the update.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdmin]
     lookup_field = 'username'
@@ -125,6 +167,9 @@ class UpdateUserView(generics.UpdateAPIView):
     serializer_class = UserSerializer
     
 class DestroyUserView(generics.DestroyAPIView):
+    """
+    API endpoint for deleting a user account. Requires admin privileges.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdmin]
     lookup_field = 'username'
@@ -133,6 +178,9 @@ class DestroyUserView(generics.DestroyAPIView):
     serializer_class = UserSerializer
 
 class GetUserByUsername(generics.RetrieveAPIView):
+    """
+    Retrieves a user's details by their username. Accessible by students.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
@@ -140,6 +188,16 @@ class GetUserByUsername(generics.RetrieveAPIView):
     serializer_class = UserSerializer
 
     def get(self, _, username):
+        """
+        Fetches and returns the details of a user identified by username.
+
+        Args:
+            _ (HttpRequest): The request object.
+            username (str): The username of the user to fetch.
+
+        Returns:
+            Response: A JSON response with the user's details or an error message.
+        """
         queryset = self.get_queryset().filter(username=username)
         if not queryset:
             return Response({"error": f"user '{username}' not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -147,6 +205,9 @@ class GetUserByUsername(generics.RetrieveAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class GetUsersByRole(generics.ListAPIView):
+    """
+    API endpoint to list users by their role. Accessible by students but primarily intended for administrative purposes.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
@@ -154,6 +215,16 @@ class GetUsersByRole(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get(self, _, role : str):
+        """
+        Fetches and returns a list of users filtered by their role.
+
+        Args:
+            _ (HttpRequest): The request object.
+            role (str): The role to filter users by.
+
+        Returns:
+            Response: A JSON response with a list of users matching the specified role or an error message.
+        """
         role = role.lower()
         # if role == "admin" and not IsAdmin().has_permission(request): 
             # return Response({"error": "user is not permitted to view all admin accounts"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -183,6 +254,9 @@ All GET requests should have authentication level of IsStudent
 '''
 
 class CreateCourseView(generics.CreateAPIView):
+    """
+    API endpoint for creating a new course. Accessible by teachers.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
     
@@ -190,6 +264,9 @@ class CreateCourseView(generics.CreateAPIView):
     serializer_class = CourseCreateSerializer
 
 class UpdateCourseView(generics.UpdateAPIView):
+    """
+    API endpoint for updating existing course details. Accessible by teachers.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
     lookup_field = 'pk'
@@ -198,6 +275,9 @@ class UpdateCourseView(generics.UpdateAPIView):
     serializer_class = CourseSerializer
 
 class DestroyCourseView(generics.DestroyAPIView):
+    """
+    API endpoint for deleting a course. Accessible by teachers.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
     lookup_field = 'pk'
@@ -206,6 +286,9 @@ class DestroyCourseView(generics.DestroyAPIView):
     serializer_class = CourseSerializer
 
 class GetCourseByName(generics.RetrieveAPIView):
+    """
+    Retrieves course details by the course name. Accessible by students.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
@@ -213,6 +296,16 @@ class GetCourseByName(generics.RetrieveAPIView):
     serializer_class = CourseSerializer
 
     def get(self, _, pk):
+        """
+        Fetches and returns the details of a course identified by its primary key.
+
+        Args:
+            _ (HttpRequest): The request object.
+            pk (str): The primary key of the course to fetch.
+
+        Returns:
+            Response: A JSON response with the course's details or an error message.
+        """
         queryset = self.get_queryset().filter(pk=pk)
         if not queryset:
             return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -220,6 +313,9 @@ class GetCourseByName(generics.RetrieveAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class GetFullCoursePage(generics.RetrieveAPIView):
+    """
+    Provides a detailed view of a course, including its lectures, attendance stats, enrolled students, and teachers. Accessible by students.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
@@ -238,6 +334,16 @@ class GetFullCoursePage(generics.RetrieveAPIView):
         return attendence_stats
     
     def get(self, request, pk):
+        """
+        Retrieves comprehensive information about a course, including lecture details and attendance statistics for the requesting user.
+
+        Args:
+            request (Request): The request object.
+            pk (str): The primary key of the course to fetch.
+
+        Returns:
+            Response: A detailed JSON response including the course's info, attendance stats, and lists of enrolled students and teachers.
+        """
         queryset = self.get_queryset().filter(pk=pk)
         if not queryset:
             return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -263,6 +369,9 @@ class GetFullCoursePage(generics.RetrieveAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class GetCoursesAll(generics.ListAPIView):
+    """
+    Lists all courses. Accessible by students, includes information on enrollment and teacher/student numbers.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
@@ -270,6 +379,15 @@ class GetCoursesAll(generics.ListAPIView):
     serializer_class = CourseSerializer
 
     def get(self, request):
+        """
+        Fetches and returns a list of all courses, including enrollment status and number of teachers/students for each.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: A JSON response with a list of all courses.
+        """
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         if len(serializer.data) == 0:
@@ -284,6 +402,10 @@ class GetCoursesAll(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EnrollCourseView(generics.GenericAPIView):
+    """
+    Enrolls a user into a specified course. If the username is provided and the requester is an admin, 
+    it enrolls that user; otherwise, it enrolls the requester. Accessible by students and admins.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     lookup_field = 'pk'
@@ -292,6 +414,16 @@ class EnrollCourseView(generics.GenericAPIView):
     serializer_class = CourseSerializer
     
     def post(self, request, username=None, *args, **kwargs):
+        """
+        Enrolls a user into a course based on the primary key provided in the URL.
+
+        Args:
+            request (Request): The request object.
+            username (Optional[str]): The username of the user to enroll. Defaults to None.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of the enrollment process.
+        """
         if username is not None:
             if user.role != AccountRoles.ADMIN: 
                 return Response({"error": f"unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -318,6 +450,10 @@ class EnrollCourseView(generics.GenericAPIView):
         return Response({"ok": f"succesfully enrolled {username} in {obj.course_name}"}, status=status.HTTP_200_OK)
 
 class DisenrollCourseView(generics.GenericAPIView):
+    """
+    Disenrolls a user from a specified course. If the username is provided and the requester is an admin, 
+    it disenrolls that user; otherwise, it disenrolls the requester. Accessible by students and admins.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     lookup_field = 'pk'
@@ -326,6 +462,16 @@ class DisenrollCourseView(generics.GenericAPIView):
     serializer_class = CourseSerializer
     
     def post(self, request, username=None, *args, **kwargs):
+        """
+        Disenrolls a user from a course based on the primary key provided in the URL.
+
+        Args:
+            request (Request): The request object.
+            username (Optional[str]): The username of the user to disenroll. Defaults to None.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of the disenrollment process.
+        """
         if username is not None:
             if request.user.role != AccountRoles.ADMIN: 
                 return Response({"error": f"unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -349,6 +495,9 @@ class DisenrollCourseView(generics.GenericAPIView):
         return Response({"ok": f"succesfully disenrolled {username} from {obj.course_name}"}, status=status.HTTP_200_OK)
 
 class MassEnrollCourseView(generics.GenericAPIView):
+    """
+    Allows an admin to mass enroll multiple users into a specified course. Accessible by admins only.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdmin]
     lookup_field = 'pk'
@@ -358,6 +507,16 @@ class MassEnrollCourseView(generics.GenericAPIView):
     
     # Mass enroll students through admin accounts 
     def post(self, request, *args, **kwargs):
+        """
+        Enrolls multiple users into a course based on the primary key provided in the URL and 
+        a list of usernames provided in the request body.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of the mass enrollment process.
+        """
         course : Course = self.get_object()
         result = MassEnrollSerializer(data=request.data, context={ "course": course })
         result.is_valid(raise_exception=True)
@@ -371,6 +530,9 @@ class MassEnrollCourseView(generics.GenericAPIView):
         return Response({"ok": f"succesfully enrolled {len(usernames)} students"}, status=status.HTTP_200_OK)
 
 class GetCourseLecturesView(generics.ListAPIView):
+    """
+    Lists all lectures for a specified course. Accessible by students.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     lookup_field = 'pk'
@@ -379,6 +541,15 @@ class GetCourseLecturesView(generics.ListAPIView):
     serializer_class = CourseSerializer
 
     def get(self, _, *args, **kwargs):
+        """
+        Retrieves and returns all lectures for a course based on the primary key provided in the URL.
+
+        Args:
+            _ (HttpRequest): The request object.
+
+        Returns:
+            Response: A JSON response containing a list of lectures for the specified course.
+        """
         course : Course = self.get_object()
         lectures = course.get_lectures()   
         serializer = LectureSerializer(lectures, many=True)
@@ -388,6 +559,9 @@ class GetCourseLecturesView(generics.ListAPIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AddLectureView(generics.GenericAPIView):
+    """
+    Adds a single lecture or a series of lectures to a course. Accessible by teachers.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
     lookup_field = 'pk'
@@ -398,6 +572,16 @@ class AddLectureView(generics.GenericAPIView):
     holiday_weeks = [1, 8, 18, 29, 30, 31, 32, 33, 34, 42, 52]
     
     def post(self, request, *args, **kwargs):
+        """
+        Creates a new lecture or a series of lectures for a course based on the primary key provided in the URL 
+        and the details provided in the request body.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of the lecture(s) creation process.
+        """
         course : Course = self.get_object()
         result = AddLectureSerializer(data=request.data, context={ "course": course })
         result.is_valid(raise_exception=True)
@@ -424,6 +608,9 @@ class AddLectureView(generics.GenericAPIView):
         return Response({"ok": f"successfully created lecture"}, status=status.HTTP_200_OK)
 
 class DestroyLectureView(generics.DestroyAPIView):
+    """
+    Deletes a lecture from a course. Accessible by teachers.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
     lookup_field = 'pk'
@@ -432,6 +619,9 @@ class DestroyLectureView(generics.DestroyAPIView):
     serializer_class = LectureSerializer
 
 class GetLectureView(generics.RetrieveAPIView):
+    """
+    Retrieves details for a specific lecture. Accessible by students.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
@@ -441,11 +631,72 @@ class GetLectureView(generics.RetrieveAPIView):
     def get(self, _, pk):
         queryset = self.get_queryset().filter(pk=pk)
         if not queryset:
-            return Response({"error": f"course id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"lecture id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(queryset[0])
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class GetFullLectureView(generics.RetrieveAPIView):
+    """
+    Provides detailed information about a specific lecture, including attendance data. 
+    Accessible by teachers, this view includes details like the course name, list of students, 
+    and their attendance status for the lecture.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsTeacher]
+    
+    queryset = CourseLecture.objects.all()
+    serializer_class = LectureSerializer
+
+    def get(self, _, pk):
+        """
+        Fetches and returns detailed information for a lecture identified by its primary key,
+        including the course name and student attendance.
+
+        Args:
+            _ (HttpRequest): The request object.
+            pk (str): The primary key of the lecture to fetch.
+
+        Returns:
+            Response: A JSON response containing detailed lecture information.
+        """
+        queryset = self.get_queryset().filter(pk=pk)
+        if not queryset:
+            return Response({"error": f"lecture id '{pk}' not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        lecture : CourseLecture = queryset[0]
+        course : Course = lecture.course
+        
+        serializer = self.serializer_class(lecture)
+        response = dict(serializer.data)
+        response["course_name"] = course.course_name
+        response["students"] = []
+        
+        students = course.get_enrolled_students()
+        for student in students:
+            att : AttendenceAcknowledgement = lecture.get_attendence_user(student)
+            attended = att.attended_teacher if att is not None else None
+            data = {
+                "first_name": student.first_name,
+                "last_name": student.last_name,
+                "username": student.username,
+                "attended": attended
+            }      
+            response["students"].append(data)
+        
+        return Response(response, status=status.HTTP_200_OK)
+    
 def setAttendence(self, request, attended):
+    """
+    A helper function to set the attendance status of a student for a lecture. 
+    This function is used internally by the SetStudentAttView and UnsetStudentAttView views.
+    
+    Args:
+        request (Request): The request object.
+        attended (bool): The attendance status to set for the student.
+
+    Returns:
+        Response: A JSON response indicating the success or failure of setting the attendance.
+    """
     if request.user.role != AccountRoles.STUDENT:
         return Response({"error": f"cannot set the attendence of a non-student"}, status=status.HTTP_200_OK)
         
@@ -455,6 +706,10 @@ def setAttendence(self, request, attended):
     return Response({"ok": f"successfully set attendence"}, status=status.HTTP_200_OK)
     
 class SetStudentAttView(generics.GenericAPIView):
+    """
+    Sets the attendance status of a student for a specific lecture to 'attended'. 
+    Accessible by students, allowing them to mark themselves as having attended a lecture.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     lookup_field = 'pk'
@@ -463,9 +718,22 @@ class SetStudentAttView(generics.GenericAPIView):
     serializer_class = CourseLecture
     
     def post(self, request, *args, **kwargs):
+        """
+        Marks the requesting student as having attended the lecture specified by the primary key in the URL.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of marking attendance.
+        """
         return setAttendence(self, request, True)
         
 class UnsetStudentAttView(generics.GenericAPIView):
+    """
+    Sets the attendance status of a student for a specific lecture to 'not attended'. 
+    Accessible by students, allowing them to mark themselves as not having attended a lecture.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     lookup_field = 'pk'
@@ -474,9 +742,22 @@ class UnsetStudentAttView(generics.GenericAPIView):
     serializer_class = CourseLecture
     
     def post(self, request, *args, **kwargs):
+        """
+        Marks the requesting student as not having attended the lecture specified by the primary key in the URL.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of marking non-attendance.
+        """
         return setAttendence(self, request, False)
     
 class SetTeacherAttView(generics.GenericAPIView):
+    """
+    Allows teachers to set the attendance status for students in a specific lecture. 
+    This endpoint is intended for use by teachers to accurately record which students attended a lecture.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsTeacher]
     lookup_field = 'pk'
@@ -485,6 +766,16 @@ class SetTeacherAttView(generics.GenericAPIView):
     serializer_class = CourseLecture
     
     def post(self, request, *args, **kwargs):
+        """
+        Sets the attendance for multiple students in the lecture specified by the primary key in the URL,
+        based on the data provided in the request body.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: A JSON response indicating the success or failure of setting student attendance.
+        """
         lecture : CourseLecture = self.get_object()
         result = SetAttendenceTeacherSerializer(data=request.data, context={ "course": lecture.course })
         result.is_valid(raise_exception=True)
@@ -499,10 +790,28 @@ class SetTeacherAttView(generics.GenericAPIView):
     
     
 class GetScheduleView(generics.GenericAPIView):
+    """
+    Retrieves the schedule of lectures for a student for a specified year and week. 
+    Optionally, it can filter the schedule to include lectures for a specific course only. 
+    Accessible by students, this endpoint helps them view their upcoming or past lecture schedule.
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsStudent]
     
     def get(self, request, year, week, course_id=None):
+        """
+        Fetches the lecture schedule for the requesting student for the given year and week. 
+        If a course_id is provided, the schedule is limited to that course.
+
+        Args:
+            request (Request): The request object.
+            year (str): The year for which to retrieve the schedule.
+            week (str): The week number within the year for which to retrieve the schedule.
+            course_id (Optional[str]): The ID of a specific course to filter the schedule. Defaults to None.
+
+        Returns:
+            Response: A JSON response containing the lecture schedule.
+        """
         if not year.isdigit() or int(year) < 1970:
             return Response({"error": f"invalid year parameter"}, status=status.HTTP_400_BAD_REQUEST)
         if not week.isdigit() or int(week) < 0 or int(week) > 52:

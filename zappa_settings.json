@@ -1,6 +1,6 @@
 {
     "prod": {
-        "app_function": "your_application.app",
+        "app_function": "api.wsgi.application",
         "aws_region": "PLACEHOLDER_REGION",
         "s3_bucket": "zappa-PLACEHOLDER_PROJECT_NAME",
         "django_settings": "api.settings",
