@@ -37,19 +37,18 @@ jobs:
         sed -i "s/PLACEHOLDER_PROJECT_NAME/${{ secrets.PROJECT_NAME }}/g" ./deployments/main.tf
         sed -i "s/PLACEHOLDER_PROJECT_NAME/${{ secrets.PROJECT_NAME }}/g" ./getEnv.sh
 
-    - name: Run DB migrations
-      run: |
-        source venv/bin/activate
-        chmod +x ./getEnv.sh && ./getEnv.sh
-        PYTHONPATH=$PWD
-        python manage.py migrate
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
+        
+    - name: Run DB migrations
+      run: |
+        source venv/bin/activate
+        chmod +x ./getEnv.sh && ./getEnv.sh
+        python manage.py migrate
 
     - name: Setup up Requirements
       run: |
