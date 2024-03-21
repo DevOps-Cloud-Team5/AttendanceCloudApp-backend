@@ -609,8 +609,10 @@ class AddLectureView(generics.GenericAPIView):
         result.is_valid(raise_exception=True)
         
         data = result.data
-        start_time = datetime.datetime.fromisoformat(data["start_time"])
-        end_time = datetime.datetime.fromisoformat(data["end_time"])
+        iso_string1 = data["start_time"].rstrip("Z")
+        iso_string2 = data["start_time"].rstrip("Z")
+        start_time = datetime.datetime.fromisoformat(iso_string1)
+        end_time = datetime.datetime.fromisoformat(iso_string2)
         
         if not data["lecture_series"]:
             course.add_lecture_to_course(start_time, end_time, data["lecture_type"])
