@@ -610,10 +610,11 @@ class AddLectureView(generics.GenericAPIView):
         
         data = result.data
         iso_string1 = data["start_time"].rstrip("Z")
-        iso_string2 = data["start_time"].rstrip("Z")
+        iso_string2 = data["end_time"].rstrip("Z")
         start_time = datetime.datetime.fromisoformat(iso_string1)
         end_time = datetime.datetime.fromisoformat(iso_string2)
-        
+        # start_time = datetime.datetime.fromisoformat(data["start_time"])
+        # end_time = datetime.datetime.fromisoformat(data["end_time"])
         if not data["lecture_series"]:
             course.add_lecture_to_course(start_time, end_time, data["lecture_type"])
         else:
@@ -863,7 +864,9 @@ class GetScheduleView(generics.GenericAPIView):
             all_lectures += lectures.data
 
         # Sort chronological order
-        all_lectures.sort(key= lambda x : datetime.datetime.fromisoformat(x["start_time"]))
+            # iso_string1 = data["start_time"].rstrip("Z")
+            
+        all_lectures.sort(key= lambda x : datetime.datetime.fromisoformat(x["start_time"].rstrip("Z")))
 
         return Response(all_lectures, status=status.HTTP_200_OK)
     
