@@ -1,4 +1,6 @@
+from functools import lru_cache
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 
 from django.contrib.auth.password_validation import validate_password
 
@@ -55,18 +57,26 @@ class CreateUserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"role": f"{attrs['role']} is not a valid role"})
         return attrs
 
-    def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
+    @classmethod
+    @lru_cache(maxsize=1024)
+    def make_cached_password(self, password):
+        return make_password(password)
+
+    @classmethod
+    def create_user_entry(self, validated_data):
+        password = CreateUserSerializer.make_cached_password(validated_data['password'])
+        user = User(username=validated_data['username'],
             email=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            role=validated_data["role"]
-        )
-
-        user.set_password(validated_data['password'])
-        user.save()
+            role=validated_data["role"],
+            password=password)
+        user._password = validated_data['password']
         return user
+
+    def create(self, validated_data):
+        user = User.objects.bulk_create(self.create_user_entry(validated_data))
+        return user[0]
     
 class CourseCreateSerializer(serializers.ModelSerializer):
     course_name = serializers.CharField(required=True, validators=[UniqueValidator(queryset=Course.objects.all(), message="course name is already in use")])

@@ -15,11 +15,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .permissions import IsTeacher, IsAdmin, IsStudent
-from .models import AttendenceAcknowledgement, Course, AccountRoles, CourseLecture
+from .models import AttendenceAcknowledgement, Course, AccountRoles, CourseLecture, UserCourse
 
 from .serializers import AddLectureSerializer, CourseUserSerializer, CustomTokenSerializer, CreateUserSerializer, LectureSerializer, MailTestSerializer, MassEnrollSerializer, SetAttendenceTeacherSerializer, UserSerializer, CourseCreateSerializer, CourseSerializer
 
-
+from multiprocessing.pool import ThreadPool
 
 from django.core.mail import send_mail
 
@@ -115,6 +115,31 @@ class CreateUserView(generics.CreateAPIView):
     
     queryset = User.objects.all()
     serializer_class = CreateUserSerializer
+
+class MassCreateUserView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdmin]
+    
+    bulk_users = []
+    
+    def create_user(self, user_data):
+        self.bulk_users.append(CreateUserSerializer.create_user_entry(user_data))
+    
+    def post(self, request, *args, **kwargs):
+        result = CreateUserSerializer(data=request.data, many=True)
+        result.is_valid(raise_exception=True)
+        
+        unique_passwords = len(set([e["password"] for e in request.data]))
+        
+        self.bulk_users = []
+        pool = ThreadPool(processes=min(unique_passwords, 100))
+        pool.map(self.create_user, request.data)
+        pool.close()
+        pool.join()
+        
+        User.objects.bulk_create(self.bulk_users)
+        return Response({"ok": f"succesfully created {len(result.data)} users"}, status=status.HTTP_201_CREATED)
+
 
 class UpdateUserView(generics.UpdateAPIView):
     authentication_classes = [JWTAuthentication]
@@ -413,12 +438,12 @@ class AddLectureView(generics.GenericAPIView):
             exclude_weeks = list(self.holiday_weeks)
             if curr_week in exclude_weeks: exclude_weeks.remove(curr_week)
             
-            start_string = start_time.strftime("%Y %a %H %M %S ") 
-            end_string = end_time.strftime("%Y %a %H %M %S ") 
+            start_string = start_time.strftime("%Z %Y %a %H %M %S ") 
+            end_string = end_time.strftime("%Z %Y %a %H %M %S ") 
             for i in range(1, 53):
                 if i in exclude_weeks: continue
-                new_start = datetime.datetime.strptime(start_string + str(i), "%Y %a %H %M %S %W")
-                new_end = datetime.datetime.strptime(end_string + str(i), "%Y %a %H %M %S %W")
+                new_start = datetime.datetime.strptime(start_string + str(i), "%Z %Y %a %H %M %S %W")
+                new_end = datetime.datetime.strptime(end_string + str(i), "%Z %Y %a %H %M %S %W")
                 course.add_lecture_to_course(new_start, new_end, data["lecture_type"])
                 
         return Response({"ok": f"successfully created lecture"}, status=status.HTTP_200_OK)
@@ -567,4 +592,14 @@ class GetScheduleView(generics.GenericAPIView):
         all_lectures.sort(key= lambda x : datetime.datetime.fromisoformat(x["start_time"]))
 
         return Response(all_lectures, status=status.HTTP_200_OK)
+
+class DeleteEnvironmentView(generics.GenericAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAdmin]
     
+    def delete(self, request, *args, **kwargs):
+        objects = [User.objects.all(), UserCourse.objects.all(), Course.objects.all()]
+        for object in objects:
+            for entry in object:
+                entry.delete()
+        return Response({"ok": "deleted the full environment"}, status=status.HTTP_200_OK)
