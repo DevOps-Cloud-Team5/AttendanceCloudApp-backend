@@ -1,9 +1,9 @@
 import datetime
 import os
 from typing import List
+from dateutil import parser
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
-
 from rest_framework import generics, status
 from rest_framework import generics
 from rest_framework.response import Response
@@ -602,8 +602,9 @@ class AddLectureView(generics.GenericAPIView):
         result.is_valid(raise_exception=True)
         
         data = result.data
-        start_time = datetime.datetime.fromisoformat(data["start_time"])
-        end_time = datetime.datetime.fromisoformat(data["end_time"])
+        
+        start_time = parser.isoparse(data["start_time"])
+        end_time = parser.isoparse(data["end_time"])
         
         if not data["lecture_series"]:
             course.add_lecture_to_course(start_time, end_time, data["lecture_type"])
@@ -854,7 +855,7 @@ class GetScheduleView(generics.GenericAPIView):
             all_lectures += lectures.data
 
         # Sort chronological order
-        all_lectures.sort(key= lambda x : datetime.datetime.fromisoformat(x["start_time"]))
+        all_lectures.sort(key= lambda x : parser.isoparse(x["start_time"]))
 
         return Response(all_lectures, status=status.HTTP_200_OK)
 
