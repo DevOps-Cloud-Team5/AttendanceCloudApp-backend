@@ -161,24 +161,12 @@ class MassCreateUserView(generics.GenericAPIView):
     
     serializer_class = CreateUserSerializer
     
-    bulk_users = []
-    
-    def create_user(self, user_data):
-        self.bulk_users.append(CreateUserSerializer.create_user_entry(user_data))
-    
     def post(self, request, *args, **kwargs):
         result = CreateUserSerializer(data=request.data, many=True)
         result.is_valid(raise_exception=True)
         
-        unique_passwords = len(set([e["password"] for e in request.data]))
-        
-        self.bulk_users = []
-        pool = ThreadPool(processes=min(unique_passwords, 100))
-        pool.map(self.create_user, request.data)
-        pool.close()
-        pool.join()
-        
-        User.objects.bulk_create(self.bulk_users)
+        bulk_users = [CreateUserSerializer.create_user_entry(uc) for uc in request.data]
+        User.objects.bulk_create(bulk_users)
         return Response({"ok": f"succesfully created {len(result.data)} users"}, status=status.HTTP_201_CREATED)
 
 
