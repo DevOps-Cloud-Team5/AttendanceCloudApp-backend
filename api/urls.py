@@ -19,6 +19,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django_rest_passwordreset.views import ResetPasswordConfirm, ResetPasswordValidateToken
 from .views import (
                     AddLectureView,
+                    DeleteEnvironmentView,
                     DestroyLectureView,
                     DisenrollCourseView,
                     GetCourseLecturesView,
@@ -26,6 +27,7 @@ from .views import (
                     GetFullLectureView,
                     GetLectureView,
                     GetScheduleView,
+                    MassCreateUserView,
                     MassEnrollCourseView,
                     SetStudentAttView,
                     SetTeacherAttView,
@@ -68,6 +70,7 @@ urlpatterns = [
     
     # All user paths
     path('user/register/', CreateUserView.as_view(), name='user_register'),
+    path('user/mass_register/', MassCreateUserView.as_view(), name='user_register'),
     path('user/update/<username>', UpdateUserView.as_view(), name='user_update'),
     path('user/delete/<username>', DestroyUserView.as_view(), name='user_delete'),
     path('user/get/<username>', GetUserByUsername.as_view(), name='user_get'),
@@ -99,6 +102,8 @@ urlpatterns = [
 
     path('schedule/get/<year>/<week>', GetScheduleView.as_view(), name='schedule_get'),
     path('schedule/get/<year>/<week>/<course_id>', GetScheduleView.as_view(), name='schedule_get'),
+
+    path('reset_environment/', DeleteEnvironmentView.as_view(), name='reset_environement'),
 
     # Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
