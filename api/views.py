@@ -159,6 +159,8 @@ class MassCreateUserView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdmin]
     
+    serializer_class = CreateUserSerializer
+    
     bulk_users = []
     
     def create_user(self, user_data):
